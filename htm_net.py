@@ -1,31 +1,34 @@
 import numpy as np
 import pandas as pd
 import copy
+import htm_cell as CELL 
 
-class htm_net():
+class htm_net(CELL):
     
     """
     
     """
     
-    def __init__(self, M=8, N=125, k=25, cell=None):
+    def __init__(self, M=None, N=None, n_dendrites=None, n_synapses=None, 
+                 nmda_th=None, perm_th=None, perm_init=None, k=None):
         
-        self.M = M
-        self.N = N
+        super().__init__(M, N, n_dendrites, n_synapses, nmda_th, perm_th, perm_init)
+        
         self.k = k
-        self.htm_cell = cell
+        
         
         
     def get_net_dims(self):
         
         """
 
-        Returns
-        -------
-        None.
-
         """
         
         return (self.M, self.N)
         
         
+    def compute_net_state(self):
+        
+        """
+        
+        """
