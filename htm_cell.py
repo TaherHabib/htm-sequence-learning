@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import copy
 
-class htm_cell():
+class HTM_CELL():
     
     """
     
@@ -32,7 +32,8 @@ class htm_cell():
         for d in range(self.n_dendrites):
             dend = np.random.normal(loc=self.perm_init, scale=0.05, size=[self.M, self.N])
             self.dendrites.append(dend)
-            
+        
+        
         
     def max_overlap_dendrite(self):
         
@@ -49,5 +50,5 @@ class htm_cell():
     def cell_predict(self):
         
         """
-        
         """
+   
