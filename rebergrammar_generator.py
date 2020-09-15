@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import random
 
 
@@ -195,7 +196,33 @@ class ReberGrammar():
             except ValueError: # using exceptions for flow control in python is common
                 return False
         
-        return True        
+        return True  
+
+    
+    def hist_len_rg(rg_exs):
+        """
+        Plots histogram of the lengths of the generated reber grammar strings.
+
+        Parameters
+        ----------
+        rg_exs : list of reber grammar strings.
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        len_rg_exs = []
+
+        for ex in rg_exs:
+            len_rg_exs.append(len(ex[0])+1)
+        
+        plt.figure()
+        plt.hist(len_rg_exs)
+        plt.show()
+        
+        return
     
 # ______________________________For ERG strings________________________________
     
