@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import copy
-import random
+
 
 from htm_cell import HTM_CELL
 from rebergrammar_generator import *
@@ -9,11 +9,9 @@ from rebergrammar_generator import *
 
 
 class HTM_NET():
-    """
-    """
 
     def __init__(self, M=None, N=None, n_dendrites=None, n_synapses=None, 
-                 nmda_th=None, perm_th=None, perm_init=None, k=None, erg=False):
+                 nmda_th=None, perm_th=None, perm_init=None, k=None):
         """
 
         Parameters
@@ -34,9 +32,7 @@ class HTM_NET():
             DESCRIPTION. The default is None.
         k : TYPE, optional
             DESCRIPTION. The default is None.
-        erg : TYPE, optional
-            DESCRIPTION. The default is False.
-
+        
         Returns
         -------
         None.
@@ -47,31 +43,13 @@ class HTM_NET():
         self.N = N # 175 = k*M
         self.k = k # 25
         
-        self.erg = erg
-        
         self.net_arch = np.empty([self.M, self.N], dtype=HTM_CELL)
         
         for i in range(self.M):
             for j in range(self.N):
                 cell = HTM_CELL(M,N,n_dendrites,n_synapses,nmda_th,perm_th,perm_init)
                 self.net_arch[i,j] = cell
-            
-        return None
-
-
-                
-            
-    def RGInputsToMinicolumns(self, n_exs=None):
-        
-        """
-        """
-        
-        if erg:
-            ...
-            
-        else:
-            exs = get_n_srg(n=n_exs)
-            
+    
         return
     
     

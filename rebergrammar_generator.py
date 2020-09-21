@@ -12,9 +12,9 @@ graph = [[(1,5),('T','P')] , [(1,2),('S','X')], \
            [(4,2,3),('T','P','S')], [(4,),('V')] ]
 
 
-class ReberGrammar():
+class Reber_Grammar():
     
-    def __init__(self, N, k, erg=False):
+    def __init__(self, N, k):
         """
         Initializer function.
         
@@ -36,18 +36,18 @@ class ReberGrammar():
         self.chars = chars
         self.emb_chars = emb_chars
         self.graph = graph
-        self.erg = erg
         
         self.N = N
         self.k = k
         
-        self.df_CharsMinicols = pd.DataFrame()
+        self.df_CharsToMinicols = pd.DataFrame() # DataFrame with cols: 'A', 'T', 'P', etc. each with 'k'
+                                                 # minicolumn indices corresponding to that character.
         minicolumns = np.arange(self.N)
         random.shuffle(minicolumns)
         
         for i, sym in enumerate(self.chars):
             mc = minicolumns[i*self.k:(i+1)*self.k]
-            self.df_CharsMinicols[sym] = np.sort(mc, kind='mergesort')
+            self.df_CharsToMinicols[sym] = np.sort(mc, kind='mergesort')
         
         return None
         
@@ -65,8 +65,9 @@ class ReberGrammar():
 
         Returns
         -------
-        inchars : list of str; an array of chars generated from SRG
-        outchars : list of tuples of str; an array of next possible transitions from each char in the first entry
+        inchars : list of str; an array of chars generated from SRG. Ex: ['A', 'P', 'V', 'T', 'S', 'Z']
+        outchars : list of tuples of str; an array of next possible transitions from each char in the first entry. 
+        Ex: [('T', 'P'), 'V', ('T', 'P', 'S'), ('T', 'P', 'S'), 'Z']
 
         """
         
@@ -98,8 +99,9 @@ class ReberGrammar():
 
         Returns
         -------
-        inseq_oh : list of binary ndarray; 
-        outseq_oh : list of binary ndarray;
+        inseq_oh : list of binary ndarray; (excluding the one-hot for 'Z' at the end)
+        outseq_oh : list of binary ndarray; (including the one-hot for 'Z' at the end 
+                                             for penultimate prediction)
 
         """
         
@@ -111,11 +113,11 @@ class ReberGrammar():
         
         for i_ch,o_ch in zip(inchars, outchars): 
             inpt = np.zeros(self.N)
-            inpt[self.df_CharsMinicols[i_ch]] = 1.     
+            inpt[self.df_CharsToMinicols[i_ch]] = 1     
             outpt = np.zeros(self.N)
             
             for o in o_ch:
-                outpt[self.df_CharsMinicols[o]] = 1.
+                outpt[self.df_CharsToMinicols[o]] = 1
             
             inseq_oh.append(inpt)
             outseq_oh.append(outpt)
@@ -136,8 +138,17 @@ class ReberGrammar():
         Returns
         -------
         examples : list; list of 'n' examples of SRG strings, along with list
-        of possible next transitions.
-
+        of possible next transitions. (i.e. list of 'n' get_one_srg() outputs)
+        
+        NOTE
+        ----
+        get_n_srg(5)[0]: gives the first <get_one_srg() output>.
+        get_n_srg(5)[0][0]: gives the input string's one-hot encoding of the first <get_n_srg() output>.
+        get_n_srg(5)[2][1]: gives the prediction string's one-hot encoding of the third <get_n_srg() output>.
+        get_n_srg(5)[2][0][0]: gives the one-hot encoding of 'A' of third <get_n_srg() output>.
+        get_n_srg(5)[2][1][0]: gives the one-hot encoding of predictions of 'T' and 'P' after 'A' for the 
+                               third <get_n_srg() output>.
+        
         """
         examples = []
         
@@ -157,15 +168,15 @@ class ReberGrammar():
 
         Returns
         -------
-        reberString : list of str; Reber string in alphabet.
+        reberString : list of str; Reber string in alphabet. Ex. 'APVPVZ'
 
         """
     
         reberString = ''
         
         for s in sequence:
-            index = np.where(s==1.0)[0][0]
-            reberString += self.df_CharsMinicols.columns[np.where(self.df_CharsMinicols==index)[1][0]]
+            index = np.where(s==1)[0][0]
+            reberString += self.df_CharsToMinicols.columns[np.where(self.df_CharsToMinicols==index)[1][0]]
         reberString+='Z'
         
         return reberString
@@ -184,6 +195,7 @@ class ReberGrammar():
         bool; True, if the string is a valid string of RG.
 
         """
+        
         if word[0] != 'A':
             return False
       
@@ -199,7 +211,7 @@ class ReberGrammar():
         return True  
 
     
-    def hist_len_rg(rg_exs):
+    def hist_len_rg(self, rg_exs):
         """
         Plots histogram of the lengths of the generated reber grammar strings.
 
@@ -217,7 +229,7 @@ class ReberGrammar():
 
         for ex in rg_exs:
             len_rg_exs.append(len(ex[0])+1)
-        
+    
         plt.figure()
         plt.hist(len_rg_exs)
         plt.show()
@@ -238,10 +250,9 @@ class ReberGrammar():
 
         Returns
         -------
-        emb_in_oh : list of binary ndarray;
-            DESCRIPTION.
-        emb_out_oh : TYPE
-            DESCRIPTION.
+        emb_in_oh : list of binary ndarray; (excluding the one-hot for 'Z' at the end).
+        emb_out_oh : list of binary ndarray; (including the one-hot for 'Z' at the end 
+                                             for penultimate prediction)
 
         """
         
@@ -253,7 +264,7 @@ class ReberGrammar():
         # Selecting one of 'T' or 'P' for embedding and computing its one-hot encoding
         emb_char = emb_chars[np.random.randint(0, len(emb_chars))]
         emb_char_oh = np.zeros(self.N)
-        emb_char_oh[self.df_CharsMinicols[emb_char]] = 1.     
+        emb_char_oh[self.df_CharsToMinicols[emb_char]] = 1     
     
         # Entering the embedded char's one-hot encoding at the second position    
         emb_in_oh[1:1] = [emb_char_oh] 
@@ -283,6 +294,10 @@ class ReberGrammar():
         -------
         examples : list; list of 'n' examples of ERG strings, along with list
         of possible next transitions.
+        
+        NOTE
+        ----
+        Similar to the note for get_n_srg() above.
 
         """
         examples = []
