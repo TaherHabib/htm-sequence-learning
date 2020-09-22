@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import copy
+
 
 class HTM_CELL():
     
@@ -25,30 +25,37 @@ class HTM_CELL():
         self.perm_th = perm_th
         self.perm_init = perm_init
         
-        self.dendrites = [] # list containing the matrices of potential synapses (permanence values)
-                            # for each dendrite of the HTM cell
+        # list containing the matrices of potential synapses (permanence values) for each dendrite
+        # of the HTM cell
+        self.dendrites = [np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])
+                          for i in range(self.n_dendrites)] 
         
-        # Initializing potential synapses for each dendritic segment of the HTM cell
-        for d in range(self.n_dendrites):
-            dend = np.random.normal(loc=self.perm_init, scale=0.05, size=[self.M, self.N])
-            self.dendrites.append(dend)
+        return
         
         
+    def get_connected_synapses(self):
+        """
+        For getting the connected synapses on all the dendrites of the cell.
+        
+        Returns
+        -------
+        A Boolean array of size (n_dendrites, M, N)
+
+        """
+        
+        return np.array(self.dendrites > 0)
         
     def max_overlap_dendrite(self):
         
-        """
-        
-        """
         
     def cell_output(self):
         
-        """
-        
-        """
         
     def cell_predict(self):
         
-        """
-        """
-   
+        
+        
+        
+# =============================================================================
+# 
+# =============================================================================

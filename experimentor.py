@@ -12,6 +12,7 @@ from htm_cell import HTM_CELL
 from htm_net import HTM_NET
 from rebergrammar_generator import *
 
+
 # ============================PARAM SETTING===================================
 
 # Network params
@@ -29,6 +30,7 @@ init_permanence = 0.2
 # Task params
 do_ERG = False
 
+
 # ========================INITIALIZING========================================
 
 rg = Reber_Grammar(N, k)
@@ -39,6 +41,7 @@ htm_network = HTM_NET(M, N, dendrites_percell, connSynapses_perdend, nmda_thresh
                       init_permanence, k, do_ERG)
 
 htm_init_state = np.zeros([M,N])
+
 
 # =================GENERATING INPUT AND PREDICTIONS STRINGS====================
 
@@ -53,14 +56,19 @@ else:
 list_in_strings = [rg_inputoutput[i][0] for i in range(nof_strings)]
 list_out_strings = [rg_inputoutput[i][1] for i in range(nof_strings)]
 
+
+
 # =============================================================================
 curr_state = htm_init_state
 
+htm_states = [] # array to store MxN binary state of HTM network
+                # at each timestep
+
 for string_idx in range(nof_strings):
     in_string = list_in_strings[string_idx]
-    for steps in range(len(in_string)):
-        curr_state = htm_network.compute_net_state(prev_state=)
-        
+    for step in range(len(in_string)):
+        curr_state = htm_network.compute_net_state(prev_state=curr_state, curr_input=in_string[step])
+        htm_states.append(curr_state)
         
         
         

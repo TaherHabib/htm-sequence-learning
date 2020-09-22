@@ -1,10 +1,8 @@
 import numpy as np
 import pandas as pd
-import copy
 
 
 from htm_cell import HTM_CELL
-from rebergrammar_generator import *
 
 
 
@@ -53,23 +51,28 @@ class HTM_NET():
         return
     
     
-    def compute_predictions(self, init_pred=None):
+    def compute_predictions(self, prev_state=None):
         
         """
         """
+        # ASSUMPTION: There will never be two dendrites on the same cell that
+        # get activated to the same activity pattern in the population.
         
-        return
+        curr_preds = np.zeros([self.M, self.N])
+        
+        return curr_preds
     
         
-    def compute_net_state(self, init_state=None):
+    def compute_net_state(self, prev_state=None, curr_input=None):
         
         """
         
         """
         
-        net_state = init_state
+        # 'curr_preds' is MxN matrix holding predictions for current timetep
+        curr_preds = self.compute_predictions(prev_state)
         
-        return
+        return net_state
     
     
     def get_net_dims(self):
