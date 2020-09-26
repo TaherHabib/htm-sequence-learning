@@ -72,7 +72,6 @@ for string_idx in range(nof_strings):
         
         # in_string[step] is a binary 1xN vector with 'k' 1s.
         curr_pred, curr_state = htm_network.get_net_state(prev_state=curr_state, curr_input=in_string[step])
-        
         htm_preds.append(curr_pred)
         htm_states.append(curr_state)
         

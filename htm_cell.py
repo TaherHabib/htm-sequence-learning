@@ -27,8 +27,8 @@ class HTM_CELL():
         
         # list containing the matrices of potential synapses (permanence values) for each dendrite
         # of the HTM cell
-        self.dendrites = [np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])
-                          for i in range(self.n_dendrites)] # is a list of 32 MxN matrices
+        self.dendrites = np.array([np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])
+                          for i in range(self.n_dendrites)]) # is a list of 32 MxN matrices, shape: (32,M,N)
         
         return
         
@@ -43,7 +43,7 @@ class HTM_CELL():
 
         """
         
-        connected_synapses = np.array(self.dendrites > self.perm_th) # is a list of 32 MxN binary matrices
+        connected_synapses = np.array(self.dendrites > self.perm_th) # boolean list of 32 MxN binary matrices, shape: (32,M,N)
         
         return connected_synapses
         

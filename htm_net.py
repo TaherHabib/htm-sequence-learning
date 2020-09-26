@@ -97,10 +97,11 @@ class HTM_NET():
         for j in range(self.N):
             for i in range(self.M):
                 cell = self.net_arch[i,j]
-                cell_connSynapses = cell.get_connected_synapses() # is a list of 32 MxN binary matrices
+                cell_connSynapses = cell.get_connected_synapses() # is a list of 32 MxN matrices, shape: (32,M,N)
                 
-                # 'cell_dendActivity' will be a boolean array 
-                cell_dendActivity = [dot_prod(prev_state,cell_connSynapses[d])>cell.nmda_th for d in range(len(cell_connSynapses))]
+                # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
+                cell_dendActivity = [dot_prod(prev_state,cell_connSynapses[d])>cell.nmda_th 
+                                     for d in range(len(cell_connSynapses))]
                 
                 # if any denrite of the cell is active, then the cell becomes predictive.
                 if any(cell_dendActivity):
@@ -139,9 +140,19 @@ class HTM_NET():
         for m in range(self.M):
             net_state.append(curr_input)
         net_state = np.array(net_state) # MxN binary matrix
-            
-            
-        net_state = curr_pred*curr_input
+        
+        # 'net_state*curr_pred' gives MxN binary matrix of only those cells that
+        # are predicted AND present in the current input. Adding 'net_state' to 
+        # this gives binary MxN 'net_state' from line 142 above but with the 
+        # predicted cells with value '2'. The next step is to find those columns
+        # in 'net_state*curr_pred + net_state' with '2' as an entry and subtract 1.
+        # The following 6 lines of code are computing eq. 1, pg. 6 in the proposal.
+        net_state = net_state*curr_pred + net_state
+        
+        for n in range(self.N):
+            mc = net_state[:,n]
+            if 2 in mc:
+                net_state[:,n] = net_state[:,n] - 1
         
         return curr_pred, net_state
     
