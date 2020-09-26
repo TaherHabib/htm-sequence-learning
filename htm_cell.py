@@ -28,7 +28,7 @@ class HTM_CELL():
         # list containing the matrices of potential synapses (permanence values) for each dendrite
         # of the HTM cell
         self.dendrites = [np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])
-                          for i in range(self.n_dendrites)] 
+                          for i in range(self.n_dendrites)] # is a list of 32 MxN matrices
         
         return
         
@@ -43,19 +43,23 @@ class HTM_CELL():
 
         """
         
-        return np.array(self.dendrites > 0)
+        connected_synapses = np.array(self.dendrites > self.perm_th) # is a list of 32 MxN binary matrices
         
+        return connected_synapses
+        
+    
     def max_overlap_dendrite(self):
+        
+        return
         
         
     def cell_output(self):
         
+        return
+        
         
     def cell_predict(self):
         
+        return
         
         
-        
-# =============================================================================
-# 
-# =============================================================================

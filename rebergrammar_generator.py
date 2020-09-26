@@ -112,14 +112,14 @@ class Reber_Grammar():
         outseq_oh = []
         
         for i_ch,o_ch in zip(inchars, outchars): 
+            
             inpt = np.zeros(self.N)
             inpt[self.df_CharsToMinicols[i_ch]] = 1     
-            outpt = np.zeros(self.N)
+            inseq_oh.append(inpt)
             
+            outpt = np.zeros(self.N)
             for o in o_ch:
                 outpt[self.df_CharsToMinicols[o]] = 1
-            
-            inseq_oh.append(inpt)
             outseq_oh.append(outpt)
         
         return inseq_oh, outseq_oh

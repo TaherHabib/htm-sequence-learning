@@ -46,7 +46,7 @@ htm_init_state = np.zeros([M,N])
 # =================GENERATING INPUT AND PREDICTIONS STRINGS====================
 
 # Generate Input strings and Predictions
-nof_strings = 100
+nof_strings = 1
 
 if do_ERG:
     rg_inputoutput = rg.get_n_erg(nof_strings)
@@ -57,18 +57,25 @@ list_in_strings = [rg_inputoutput[i][0] for i in range(nof_strings)]
 list_out_strings = [rg_inputoutput[i][1] for i in range(nof_strings)]
 
 
-
 # =============================================================================
 curr_state = htm_init_state
 
-htm_states = [] # array to store MxN binary state of HTM network
-                # at each timestep
+# array to store MxN binary state matrix of HTM network at each timestep
+htm_states = []
+# array to store MxN binary predition matrix of HTM network at each timestep
+htm_preds = []
+
 
 for string_idx in range(nof_strings):
     in_string = list_in_strings[string_idx]
     for step in range(len(in_string)):
-        curr_state = htm_network.compute_net_state(prev_state=curr_state, curr_input=in_string[step])
+        
+        # in_string[step] is a binary 1xN vector with 'k' 1s.
+        curr_pred, curr_state = htm_network.get_net_state(prev_state=curr_state, curr_input=in_string[step])
+        
+        htm_preds.append(curr_pred)
         htm_states.append(curr_state)
+        
         
         
         
