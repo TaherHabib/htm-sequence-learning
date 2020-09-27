@@ -77,12 +77,19 @@ for string_idx in range(nof_strings):
         
         # in_string[step] is a binary 1xN vector with 'k' 1s.
         curr_pred, curr_state = htm_network.get_net_state(prev_state=curr_state, curr_input=in_string[step])
+        
         htm_preds.append(curr_pred)
         htm_states.append(curr_state)
         htm_networks.append(htm_network.get_NETWORK())
         
-        # LEARNING
-    
+        # PRUNING PERMANENCE VALUES that have become negative due to updating via
+        # Hebbian rule, and setting them all to zero.
+        htm_network.prune_net_NegSynaPermanences()
+        
+        # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
+        htm_network.do_net_synaPermUpdate(prev_pred=curr_pred, prev_state=curr_state)
+        
+        
         
         
         

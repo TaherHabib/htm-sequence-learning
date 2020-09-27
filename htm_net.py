@@ -4,7 +4,7 @@ import pandas as pd
 
 from htm_cell import HTM_CELL
 
-# =============================================================================
+# =======================DEFINING CUSTOM FUNCTIONS=============================
 
 def dot_prod(matrix_1=None, matrix_2=None):
     """
@@ -167,10 +167,11 @@ class HTM_NET():
         # The following 6 lines of code are computing eq. 1, pg. 6 in the proposal.
         
         # NOTE: Although the learning rules are designed to make the following
-        # impossible, but even if it so happens that two different cells are predicted
+        # impossible, but even if it so happens that TWO DIFFERENT cells are predicted
         # in the same minicolumn at a particular time step, then the equation below
         # will make those cells become silent or active depending on whether that 
         # particular minicolumn is in the set of current timestep's input or not.
+        # Hence, the equation is robust to such special cases.
         
         net_state = net_state*curr_pred + net_state
         
@@ -180,6 +181,21 @@ class HTM_NET():
                 net_state[:,n] = net_state[:,n] - 1
         
         return curr_pred, net_state
+    
+    
+    def do_net_synaPermUpdate(self, prev_pred=None, prev_state=None):
+        
+        #_______________________CASE I__________________________
+        # When winning column is not predicted (as would happen in the 
+        # initial stage after initialization of the network)
+        
+        
+        
+        #_______________________CASE II__________________________
+        
+        
+        
+        return None
     
     
     def get_NETWORK(self):
@@ -194,16 +210,14 @@ class HTM_NET():
         return self.net_arch
     
     
-    def get_net_synaPermanences(self):
-        
-        net_synaPerm = np.empty([self.M, self.N])
+    def prune_net_NegSynaPermanences(self):
         
         for i in range(self.M):
             for j in range(self.N):
-                cell_synaPerm = self.net_arch[i,j].get_cell_synaPermanences()
-                net_synaPerm[i,j] = cell_synaPerm 
-        
-        return net_synaPerm
+                cell = self.net_arch[i,j]
+                cell.dendrites[cell.dendrites<0] = 0
+                
+        return
     
 
     def get_net_dims(self):

@@ -31,20 +31,6 @@ class HTM_CELL():
                           for i in range(self.n_dendrites)]) # is a list of 32 MxN matrices, shape: (32,M,N)
         
         return
-        
-        
-    def get_cell_synaPermanences(self):
-        """
-        For getting the permanence values of all synapses on all the dendrites 
-        of the cell.
-        
-        Returns
-        -------
-        A Boolean array of size (n_dendrites, M, N)
-
-        """
-        
-        return self.dendrites
     
     
     def get_cell_connSynapses(self):
@@ -63,18 +49,20 @@ class HTM_CELL():
         return connected_synapses
         
     
-    def max_overlap_dendrite(self):
+    def get_dendrite_MaxOverlap(self):
         
         return
         
         
-    def cell_output(self):
+    def get_cell_synaPermanences(self):
+        """
+        For getting the permanence values of all synapses on all the dendrites 
+        of the cell.
         
-        return
+        Returns
+        -------
+        A Boolean array of size (n_dendrites, M, N)
+
+        """
         
-        
-    def cell_predict(self):
-        
-        return
-        
-        
+        return self.dendrites
