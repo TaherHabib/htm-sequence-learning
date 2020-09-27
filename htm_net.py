@@ -29,8 +29,8 @@ def dot_prod(matrix_1=None, matrix_2=None):
 
 class HTM_NET():
 
-    def __init__(self, M=None, N=None, n_dendrites=None, n_synapses=None, 
-                 nmda_th=None, perm_th=None, perm_init=None, k=None):
+    def __init__(self, M=None, N=None, k=None, n_dendrites=None, n_synapses=None, 
+                 nmda_th=None, perm_th=None, perm_init=None):
         """
 
         Parameters
@@ -98,7 +98,7 @@ class HTM_NET():
         for j in range(self.N):
             for i in range(self.M):
                 cell = self.net_arch[i,j]
-                cell_connSynapses = cell.get_connected_synapses() # is a list of 32 MxN matrices, shape: (32,M,N)
+                cell_connSynapses = cell.get_cell_connSynapses() # is a list of 32 MxN matrices, shape: (32,M,N)
                 
                 # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
                 cell_dendActivity = [dot_prod(prev_state,cell_connSynapses[d])>cell.nmda_th 
@@ -127,9 +127,25 @@ class HTM_NET():
     
         
     def get_net_state(self, prev_state=None, curr_input=None):
-        
         """
+        Computes the current timestep's network activity and predictions, based
+        on the previous timestep's state of the network and the current 
+        timestep's input.
+
+        Parameters
+        ----------
+        prev_state : MxN binary matrix of network's acitivity at the previous
+        timestep.
         
+        curr_input : binary vector of current input, shape (N,), with 'k' 1's.
+
+        Returns
+        -------
+        curr_pred : binary MxN matrix of current timestep's predictions (input 
+        chars for the next timestep).
+    
+        net_state : binary MxN matrix of network's activity at current timestep. 
+
         """
         
         # 'curr_preds' is MxN binary matrix holding predictions for current timetep
@@ -166,13 +182,30 @@ class HTM_NET():
         return curr_pred, net_state
     
     
+    def get_NETWORK(self):
+        """
+        Returns the network architecture – MxN matrix of HTM_CELLs
+
+        Returns
+        -------
+        MxN matrix of HTM_CELLs
+        
+        """
+        return self.net_arch
+    
+    
     def get_net_synaPermanences(self):
         
-        net_synaPerm = 
+        net_synaPerm = np.empty([self.M, self.N])
         
+        for i in range(self.M):
+            for j in range(self.N):
+                cell_synaPerm = self.net_arch[i,j].get_cell_synaPermanences()
+                net_synaPerm[i,j] = cell_synaPerm 
         
         return net_synaPerm
     
+
     def get_net_dims(self):
         """
         Returns
@@ -201,6 +234,13 @@ class HTM_NET():
 # for i in range(self.N//self.k):
 #     mc = minicolumns[i*self.k:(i+1)*self.k]
 # =============================================================================
-       
+ 
+
+# array to store the MxN matrix – at each timestep – of each matrix P of 
+# shape (<dendrites_percell>,M,N) which stores the permanence values of that cell
+# htm_net_synaPerm = []
+
+
+      
 
 # =============================================================================

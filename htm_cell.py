@@ -33,7 +33,21 @@ class HTM_CELL():
         return
         
         
-    def get_connected_synapses(self):
+    def get_cell_synaPermanences(self):
+        """
+        For getting the permanence values of all synapses on all the dendrites 
+        of the cell.
+        
+        Returns
+        -------
+        A Boolean array of size (n_dendrites, M, N)
+
+        """
+        
+        return self.dendrites
+    
+    
+    def get_cell_connSynapses(self):
         """
         For getting the connected synapses on all the dendrites of the cell.
         
@@ -43,7 +57,8 @@ class HTM_CELL():
 
         """
         
-        connected_synapses = np.array(self.dendrites > self.perm_th) # boolean list of 32 MxN binary matrices, shape: (32,M,N)
+        connected_synapses = np.array(self.dendrites > self.perm_th) # boolean list of 32 MxN binary matrices, 
+                                                                     # shape: (32,M,N)
         
         return connected_synapses
         

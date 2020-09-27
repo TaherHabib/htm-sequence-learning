@@ -37,8 +37,8 @@ rg = Reber_Grammar(N, k)
 df_CharsToMinicols = rg.df_CharsToMinicols
 
 
-htm_network = HTM_NET(M, N, dendrites_percell, connSynapses_perdend, nmda_threshold, permanence_threshold,
-                      init_permanence, k)
+htm_network = HTM_NET(M, N, k, n_dendrites=dendrites_percell, n_synapses=connSynapses_perdend, 
+                      nmda_th=nmda_threshold, perm_th=permanence_threshold, perm_init=init_permanence)
 
 htm_init_state = np.zeros([M,N])
 
@@ -62,9 +62,14 @@ curr_state = htm_init_state
 
 # array to store MxN binary state matrix of HTM network at each timestep
 htm_states = []
+
 # array to store MxN binary predition matrix of HTM network at each timestep
 htm_preds = []
 
+# array to store MxN matrix of HTM cells at each timestep. This storage is mainly 
+# to have an access to the evolution of the synaptic permanence values of each 
+# cell in the network with time. 
+htm_networks = []
 
 for string_idx in range(nof_strings):
     in_string = list_in_strings[string_idx]
@@ -74,17 +79,17 @@ for string_idx in range(nof_strings):
         curr_pred, curr_state = htm_network.get_net_state(prev_state=curr_state, curr_input=in_string[step])
         htm_preds.append(curr_pred)
         htm_states.append(curr_state)
+        htm_networks.append(htm_network.get_NETWORK())
         
-        
-        
-        
+        # LEARNING
+    
         
         
         
         
 # ================================NOTES=======================================
 
-#_________I__________
+#_________I_________
 # In the original HTM, M=32, N=2048, k=40. 
 # Total number of cells = 32*2048 =  65,536
 # Initial (before SDR learning) activity level in the network = 40*32 = 1280 (~2%)
@@ -117,3 +122,6 @@ for string_idx in range(nof_strings):
 # NMDA threshold/nof synapses per dendrites = 12/32 ~ 37.5%
 
 # False match probability = 8.733769726186268e-15
+
+
+#________III_________
