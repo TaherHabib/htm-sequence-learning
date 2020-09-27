@@ -75,7 +75,7 @@ class HTM_NET():
     
     def get_onestep_prediction(self, prev_state=None):
         """
-        Computes the current step's predictions.
+        Computes the current step's predictions. Disregarding the LRD mechanism.
 
         Parameters
         ----------
@@ -91,6 +91,7 @@ class HTM_NET():
         
         # ASSUMPTION: There will never be two dendrites on the same cell that
         # get activated to the same activity pattern in the population.
+        
         
         curr_pred = np.zeros([self.M, self.N])
         
@@ -110,6 +111,7 @@ class HTM_NET():
                     curr_pred[i,j] = 0
         
         return curr_pred
+    
     
     def get_LRD_prediction(self):
         """
@@ -143,10 +145,17 @@ class HTM_NET():
         
         # 'net_state*curr_pred' gives MxN binary matrix of only those cells that
         # are predicted AND present in the current input. Adding 'net_state' to 
-        # this gives binary MxN 'net_state' from line 142 above but with the 
+        # this gives binary MxN 'net_state' from line 144 above but with the 
         # predicted cells with value '2'. The next step is to find those columns
         # in 'net_state*curr_pred + net_state' with '2' as an entry and subtract 1.
         # The following 6 lines of code are computing eq. 1, pg. 6 in the proposal.
+        
+        # NOTE: Although the learning rules are designed to make the following
+        # impossible, but even if it so happens that two different cells are predicted
+        # in the same minicolumn at a particular time step, then the equation below
+        # will make those cells become silent or active depending on whether that 
+        # particular minicolumn is in the set of current timestep's input or not.
+        
         net_state = net_state*curr_pred + net_state
         
         for n in range(self.N):
@@ -156,6 +165,13 @@ class HTM_NET():
         
         return curr_pred, net_state
     
+    
+    def get_net_synaPermanences(self):
+        
+        net_synaPerm = 
+        
+        
+        return net_synaPerm
     
     def get_net_dims(self):
         """

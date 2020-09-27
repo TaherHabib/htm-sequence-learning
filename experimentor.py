@@ -38,7 +38,7 @@ df_CharsToMinicols = rg.df_CharsToMinicols
 
 
 htm_network = HTM_NET(M, N, dendrites_percell, connSynapses_perdend, nmda_threshold, permanence_threshold,
-                      init_permanence, k, do_ERG)
+                      init_permanence, k)
 
 htm_init_state = np.zeros([M,N])
 
@@ -82,6 +82,38 @@ for string_idx in range(nof_strings):
         
         
         
-# =============================================================================
-# 
-# =============================================================================
+# ================================NOTES=======================================
+
+#_________I__________
+# In the original HTM, M=32, N=2048, k=40. 
+# Total number of cells = 32*2048 =  65,536
+# Initial (before SDR learning) activity level in the network = 40*32 = 1280 (~2%)
+# After SDR learning, activity is expected to reduce to 40*1 = 30 (~0.05%)
+
+# Max nof dendrites per neuron = 128
+# Max nof synapses per dendrites = 128 (approx. max. 0.2% of the cells are connected 
+# to a single dendrite)
+# Thus, nof connected synapses per neuron = 128*128 = 16,384, which is 25% of 
+# the totol network size.
+
+# NMDA threshold = 15. 
+# NMDA threshold/nof synapses per dendrites = 15/128 ~ 11.7%
+
+# False match probability = 3.7848536276106233e-31
+
+#________II__________
+# In my HTM version, M=8, N=175, k=25.
+# Total number of cells = 8*175 = 1400
+# Initial (before SDR learning) activity level in the network = 25*8 = 200 (~14%)
+# After SDR learning, activity is expected to reduce to 25*1 = 25 (~1.8%)
+
+# Max nof dendrites per neuron = 32
+# Max nof synapses per dendrites = 32 (approx. max. 2.3% of the cells are connected 
+# to a single dendrite)
+# Thus, nof connected synapses per neuron = 32*32 = 1024, which is ~73% of 
+# the totol network size.
+
+# NMDA threshold = 12.
+# NMDA threshold/nof synapses per dendrites = 12/32 ~ 37.5%
+
+# False match probability = 8.733769726186268e-15
