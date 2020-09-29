@@ -45,7 +45,6 @@ class HTM_CELL():
         
         connected_synapses = np.array(self.dendrites > self.perm_th) # boolean list of 32 MxN binary matrices, 
                                                                      # shape: (32,M,N)
-        
         return connected_synapses
         
     

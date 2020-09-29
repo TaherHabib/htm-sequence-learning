@@ -58,7 +58,6 @@ list_out_strings = [rg_inputoutput[i][1] for i in range(nof_strings)]
 
 
 # =============================================================================
-curr_state = htm_init_state
 
 # array to store MxN binary state matrix of HTM network at each timestep
 htm_states = []
@@ -72,11 +71,16 @@ htm_preds = []
 htm_networks = []
 
 for string_idx in range(nof_strings):
+
+    curr_state = htm_init_state
+    curr_pred = htm_init_state
     in_string = list_in_strings[string_idx]
+
     for step in range(len(in_string)):
         
         # in_string[step] is a binary 1xN vector with 'k' 1s.
-        curr_pred, curr_state = htm_network.get_net_state(prev_state=curr_state, curr_input=in_string[step])
+        curr_pred, curr_state = htm_network.get_net_state(prev_pred=curr_pred, prev_state=curr_state,
+                                                          curr_input=in_string[step])
         
         htm_preds.append(curr_pred)
         htm_states.append(curr_state)
@@ -89,8 +93,11 @@ for string_idx in range(nof_strings):
         # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
         htm_network.do_net_synaPermUpdate(prev_input=in_string[step], prev_pred=curr_pred, prev_state=curr_state)
         
-        
-        
+
+# IMPORTANT       
+# SOLVE THE PROBLEM OF COMPATIBILITY OF GET_NET_STATE()'S OUTPUT WITH THE OUTPUTS OF
+# REBER GRAMMAR GENERATING FUNCTION. THERE IS NO FINAL 'Z' IN THE END OF EACH STRING (AS INPUT),
+# BUT THERE IS A PREDICTION FOR 'Z'.
         
         
         
