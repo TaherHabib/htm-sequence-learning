@@ -84,10 +84,10 @@ for string_idx in range(nof_strings):
         
         # PRUNING PERMANENCE VALUES that have become negative due to updating via
         # Hebbian rule, and setting them all to zero.
-        htm_network.prune_net_NegSynaPermanences()
+        htm_network.prune_net_NegPermanences()
         
         # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
-        htm_network.do_net_synaPermUpdate(prev_pred=curr_pred, prev_state=curr_state)
+        htm_network.do_net_synaPermUpdate(prev_input=in_string[step], prev_pred=curr_pred, prev_state=curr_state)
         
         
         

@@ -8,21 +8,28 @@ from htm_cell import HTM_CELL
 
 def dot_prod(matrix_1=None, matrix_2=None):
     """
-    Computes the element-wise multiplication over two equi-dimensional matrices,
-    sums up the entries of the resulting matrix and returns a scalar value.
+    Computes the element-wise multiplication of an MxN matrix with a list of 'n'
+    other equi-dimensional matrices (n,M,N); and outputs a list of scalar values 
+    of sum over all the entries of each of the resulting 'n' matrices.
 
     Parameters
     ----------
-    matrix_1 : float array of shape (MxN)
-    matrix_2 : float array of shape (MxN)
+    matrix_1 : float array of shape (M,N)
+    matrix_2 : float array of shape (<nof_matrices>,M,N)
 
     Returns
     -------
-    float, scalar value
+    list of float, scalar values
 
     """
     
-    return np.sum(np.multiply(matrix_1, matrix_2))
+    mult_res = np.multiply(matrix_1, matrix_2)
+    
+    result = []
+    for i in range(len(mult_res)):
+        result.append(np.sum(mult_res[i]))
+    
+    return np.array(result)
 
 
 # ========================DEFINING HTM NETWORK=================================
@@ -101,8 +108,7 @@ class HTM_NET():
                 cell_connSynapses = cell.get_cell_connSynapses() # is a list of 32 MxN matrices, shape: (32,M,N)
                 
                 # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
-                cell_dendActivity = [dot_prod(prev_state,cell_connSynapses[d])>cell.nmda_th 
-                                     for d in range(len(cell_connSynapses))]
+                cell_dendActivity = dot_prod(prev_state,cell_connSynapses)>cell.nmda_th
                 
                 # if any denrite of the cell is active, then the cell becomes predictive.
                 if any(cell_dendActivity):
@@ -183,12 +189,26 @@ class HTM_NET():
         return curr_pred, net_state
     
     
-    def do_net_synaPermUpdate(self, prev_pred=None, prev_state=None):
+    def do_net_synaPermUpdate(self, prev_input=None, prev_pred=None, prev_state=None):
         
         #_______________________CASE I__________________________
         # When winning column is not predicted (as would happen in the 
         # initial stage after initialization of the network)
         
+        winning_cols = list(np.where(prev_input)[0])
+        
+        # Collect all columns that are unpredicted (minicols with more than one 1s)
+        unpredicted_cols = []
+        for j in winning_cols:
+            if prev_state[:,j].sum() > 1:
+                unpredicted_cols.append(j)
+                
+        for j in unpredicted_cols:
+            for i in range(self.M):
+                overlap = []
+                cell_synapses = self.net_arch[i,j].dendrites
+                
+                
         
         
         #_______________________CASE II__________________________
@@ -210,7 +230,7 @@ class HTM_NET():
         return self.net_arch
     
     
-    def prune_net_NegSynaPermanences(self):
+    def prune_net_NegPermanences(self):
         
         for i in range(self.M):
             for j in range(self.N):
