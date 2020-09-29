@@ -196,7 +196,7 @@ class HTM_NET():
         return curr_pred, curr_state
     
     
-    def do_net_synaPermUpdate(self, prev_input=None, prev_pred=None, prev_state=None):
+    def do_net_synaPermUpdate(self, prev_input=None, prev_state=None):
         
         #_______________________CASE I__________________________
         # When winning column is not predicted (as would happen in the 
