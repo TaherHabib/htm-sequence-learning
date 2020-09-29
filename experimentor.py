@@ -91,7 +91,7 @@ for string_idx in range(nof_strings):
         htm_network.prune_net_NegPermanences()
         
         # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
-        htm_network.do_net_synaPermUpdate(prev_input=in_string[step], prev_pred=curr_pred, prev_state=curr_state)
+        htm_network.do_net_synaPermUpdate(prev_input=in_string[step], prev_state=curr_state)
         
 
 # IMPORTANT       
