@@ -136,7 +136,7 @@ class HTM_NET():
         return
     
         
-    def get_net_state(self, prev_pred=None, prev_state=None, curr_input=None):
+    def get_net_state(self, prev_pred=None, curr_input=None):
         """
         Computes the current timestep's network activity and predictions, based
         on the previous timestep's state of the network and the current 
@@ -185,10 +185,12 @@ class HTM_NET():
         
         curr_state = curr_state*prev_pred + curr_state
         
-        for n in range(self.N):
-            mc = curr_state[:,n]
+        winning_cols = list(np.where(curr_input)[0])
+        
+        for j in winning_cols:
+            mc = curr_state[:,j]
             if 2 in mc:
-                curr_state[:,n] = curr_state[:,n] - 1
+                curr_state[:,j] = curr_state[:,j] - 1
                 
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
         curr_pred = self.get_onestep_prediction(curr_state)
@@ -220,10 +222,17 @@ class HTM_NET():
                 # 'cell_dendFloat' will be a float array of shape (<cell.n_dendrites>,)
                 cell_dendFloat = dot_prod(prev_state,cell_synapses) 
                 overlap.append(cell_dendFloat)
+                
+            
         
         #_______________________CASE II__________________________
         
         
+        
+        return None
+    
+    
+    def intrinsic_plasticity(self):
         
         return None
     
@@ -241,6 +250,14 @@ class HTM_NET():
     
     
     def prune_net_NegPermanences(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         
         for i in range(self.M):
             for j in range(self.N):

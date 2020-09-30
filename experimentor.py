@@ -24,8 +24,8 @@ k = 25
 dendrites_percell = 32
 connSynapses_perdend = 32
 nmda_threshold = 12
-permanence_threshold = 0.4
-init_permanence = 0.2
+permanence_threshold = 0.40
+init_permanence = 0.25
 
 # Task params
 do_ERG = False
@@ -56,43 +56,60 @@ else:
 list_in_strings = [rg_inputoutput[i][0] for i in range(nof_strings)]
 list_out_strings = [rg_inputoutput[i][1] for i in range(nof_strings)]
 
+in_strings_alpha = []
+for string_oh in list_in_strings:
+    string_alpha = rg.OnehotToWord(string_oh)
+    in_strings_alpha.append(string_alpha)
 
 # =============================================================================
 
 # array to store MxN binary state matrix of HTM network at each timestep
-htm_states = []
+dict_htm_states = {}
 
 # array to store MxN binary predition matrix of HTM network at each timestep
-htm_preds = []
+dict_htm_preds = {}
 
 # array to store MxN matrix of HTM cells at each timestep. This storage is mainly 
 # to have an access to the evolution of the synaptic permanence values of each 
 # cell in the network with time. 
-htm_networks = []
+dict_htm_networks = {}
 
 for string_idx in range(nof_strings):
-
+    
+    key = in_strings_alpha[string_idx]
+        
+    htm_states=[]
+    htm_preds=[]
+    htm_networks=[]
+    
     curr_state = htm_init_state
     curr_pred = htm_init_state
     in_string = list_in_strings[string_idx]
 
     for step in range(len(in_string)):
         
-        # in_string[step] is a binary 1xN vector with 'k' 1s.
-        curr_pred, curr_state = htm_network.get_net_state(prev_pred=curr_pred, prev_state=curr_state,
+        # in_string[step] is a binary 1xN vector (np.array) with 'k' 1s.
+        curr_pred, curr_state = htm_network.get_net_state(prev_pred=curr_pred,
                                                           curr_input=in_string[step])
         
         htm_preds.append(curr_pred)
         htm_states.append(curr_state)
         htm_networks.append(htm_network.get_NETWORK())
-        
-        # PRUNING PERMANENCE VALUES that have become negative due to updating via
-        # Hebbian rule, and setting them all to zero.
+    
+        # PRUNING Negative Permanence Values
         htm_network.prune_net_NegPermanences()
         
         # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
         htm_network.do_net_synaPermUpdate(prev_input=in_string[step], prev_state=curr_state)
         
+        
+    dict_htm_preds[key] = np.array(htm_preds) # numpy array of shape: (<len(in_string)>,M,N)
+    dict_htm_states[key] = np.array(htm_states) # numpy array of shape: (<len(in_string)>,M,N)
+    dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>,M,N)
+
+
+
+
 
 # IMPORTANT       
 # SOLVE THE PROBLEM OF COMPATIBILITY OF GET_NET_STATE()'S OUTPUT WITH THE OUTPUTS OF
