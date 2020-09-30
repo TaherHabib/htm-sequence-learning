@@ -26,9 +26,9 @@ class HTM_CELL():
         self.perm_init = perm_init
         
         # list containing the matrices of potential synapses (permanence values) for each dendrite
-        # of the HTM cell
+        # of the HTM cell; list of 32 MxN matrices, shape: (32,M,N)
         self.dendrites = np.array([np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])
-                          for i in range(self.n_dendrites)]) # is a list of 32 MxN matrices, shape: (32,M,N)
+                          for i in range(self.n_dendrites)], dtype=np.float64) 
         
         self.dutycycle = []
         

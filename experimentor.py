@@ -27,6 +27,11 @@ nmda_threshold = 12
 permanence_threshold = 0.40
 init_permanence = 0.25
 
+perm_decrement = 0.05 # p-
+perm_increment = 2*perm_decrement # p+
+perm_decay = 0.1*perm_decrement # p--
+perm_boost = 0.1*perm_decrement # p++
+
 # Task params
 do_ERG = False
 
@@ -37,8 +42,11 @@ rg = Reber_Grammar(N, k)
 df_CharsToMinicols = rg.df_CharsToMinicols
 
 
-htm_network = HTM_NET(M, N, k, n_dendrites=dendrites_percell, n_synapses=connSynapses_perdend, 
-                      nmda_th=nmda_threshold, perm_th=permanence_threshold, perm_init=init_permanence)
+htm_network = HTM_NET(M, N, k, 
+                      n_dendrites=dendrites_percell, n_synapses=connSynapses_perdend, nmda_th=nmda_threshold, 
+                      perm_th=permanence_threshold, perm_init=init_permanence,
+                      perm_decrement=perm_decrement, perm_increment=perm_increment,
+                      perm_decay=perm_decay, perm_boost=perm_boost)
 
 htm_init_state = np.zeros([M,N])
 
@@ -155,4 +163,25 @@ for string_idx in range(nof_strings):
 # False match probability = 8.733769726186268e-15
 
 
+
 #________III_________
+# np.where(b==np.amax(b)) always gives a 2-tuple as output, for all 'b' such that 
+# 'b' is a list of size (m,n), containing 'm' numpy.arrays of length 'n' filled with
+# numeric float integers.
+# The first entry of the tuple contains the array index(indices) which contain the 
+# maximum numeric entry in 'b', the second entry of the tuple contains the index(indices)
+# within those arrays at which the max element could be found. 
+
+# For instance, if 
+# b = [array([2.25, 2.5 , 0.4 ]),
+#      array([4.5, 5. , 0.8]),
+#      array([11.25, 12.5 ,  2.  ]),
+#      array([ 1. ,  2. , 12.5])]
+# Then, np.where(b==np.amax(b)) will give:
+# (array([2, 3]), array([1, 2])) as ouput. 
+
+
+
+#_________IV__________
+
+
