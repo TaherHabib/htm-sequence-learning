@@ -248,13 +248,14 @@ class HTM_NET():
             max_overlap_cell = np.where(overlap==np.amax(overlap))[0]
             max_overlap_dendrite = np.where(overlap==np.amax(overlap))[1]
             
-            if len(max_overlap_cell)>1:
+            if len(max_overlap_cell) > 1:
                 
                 multi_cell_MaxOverlap = True
                 
                 # 'MaxOverlap_cell_dend' is a MxN permanence value matrix.
-                # In the case when there are more than 1 cells with a max overlap with 'prev_state',
-                # I take the first one (index [0]), reinforce it, and simply re-initialize the other cells/dendrites.
+                # In the case when there are more than 1 cells with a max overlap with 
+                # 'prev_state', I take the first one (index [0]), reinforce it, and 
+                # simply re-initialize the other cells/dendrites.
                 MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
                 
                 # Decrement all synapses by p-
