@@ -3,39 +3,7 @@ import pandas as pd
 
 
 from htm_cell import HTM_CELL
-
-# =======================DEFINING CUSTOM FUNCTIONS=============================
-
-def dot_prod(matrix_1=None, matrix_2=None):
-    """
-    Computes the element-wise multiplication of an MxN matrix with a list of 'n'
-    other equi-dimensional matrices (n,M,N); and outputs a list of scalar values 
-    of sum over all the entries of each of the resulting 'n' matrices.
-
-    Parameters
-    ----------
-    matrix_1 : float array of shape (M,N)
-    matrix_2 : float array of shape (<nof_matrices>,M,N). If only one MxN matrix 
-    is passed, it should be of shape (1,M,N).
-
-    Returns
-    -------
-    list of float, scalar values
-    
-    NOTE
-    ----
-    This function also excepts Boolean (or binary) arrays as inputs.
-
-    """
-    
-    mult_res = np.multiply(matrix_1, matrix_2, dtype=np.float64)
-    
-    result = []
-    for i in range(len(mult_res)):
-        result.append(np.sum(mult_res[i], dtype=np.float64))
-    
-    return np.array(result, dtype=np.float64)
-
+from ufuncs import dot_prod
 
 # ========================DEFINING HTM NETWORK=================================
 
@@ -109,7 +77,8 @@ class HTM_NET():
         
         # ASSUMPTION: There will never be two dendrites on the same cell that
         # get activated to the same activity pattern in the population.
-        
+    
+        cell_idx_multiDend = []
         
         pred = np.zeros([self.M, self.N])
         
@@ -125,8 +94,10 @@ class HTM_NET():
                 # if any denrite of the cell is active, then the cell becomes predictive.
                 if any(cell_dendActivity):
                     pred[i,j] = 1.0
+                    if np.count_nonzero(cell_dendActivity) > 1:
+                        cell_idx_multiDend.append((i,j))
                 
-        return pred
+        return pred, np.array(cell_idx_multiDend)
     
     
     def get_LRD_prediction(self):
@@ -187,7 +158,7 @@ class HTM_NET():
         # in the same minicolumn at a particular time step, then the equation below
         # will make those cells become silent or active depending on whether that 
         # particular minicolumn is in the set of current timestep's input or not.
-        # Hence, the equation is robust to such special cases.
+        # In other words, the equation is robust to such special cases.
         
         curr_state = curr_state*prev_pred + curr_state
         
@@ -199,9 +170,9 @@ class HTM_NET():
                 curr_state[:,j] = curr_state[:,j] - 1
                 
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
-        curr_pred = self.get_onestep_prediction(curr_state)
+        curr_pred, cell_idx_multiDendrite = self.get_onestep_prediction(curr_state)
         
-        return curr_pred, curr_state
+        return curr_state, curr_pred, cell_idx_multiDendrite
     
     
     def do_net_synaPermUpdate(self, prev_input=None, prev_state=None):
@@ -210,14 +181,22 @@ class HTM_NET():
         winning_cols = list(np.where(prev_input)[0])
         
         # From winning columns, collect all columns that are unpredicted (minicols with 
-        # more than one 1s) and predicted (minicols with only one 1)
+        # all 1s) and predicted (minicols with only one 1) 
         unpredicted_cols = []
-        
+        predicted_cols = []
+                    
         for j in winning_cols:
-            if prev_state[:,j].sum() > 1:
+            if prev_state[:,j].sum() == self.M:
                 unpredicted_cols.append(j)
         
-        predicted_cols = [col for col in winning_cols if col not in unpredicted_cols]
+        for j in winning_cols:
+            if prev_state[:,j].sum() == 1:
+                predicted_cols.append(j)
+        
+        # From winning columns, collect all columns that are not unpredicted, but have multiple
+        # predicted cells.
+        multi_predicted_cols = [col for col in winning_cols if ((col not in unpredicted_cols) and 
+                                                                (col not in predicted_cols))]
         
         
         #_______________________CASE I_________________________________________
@@ -226,7 +205,7 @@ class HTM_NET():
         # initial stage after initialization of the network)
         # ---------------------------------------------------------------------
         
-        multi_cell_MaxOverlap = False
+        multi_cell_MaxOverlap = []
                 
         for j in unpredicted_cols:
             overlap = [] # 'overlap' will eventually be a list of np.arrays.
@@ -250,7 +229,7 @@ class HTM_NET():
             
             if len(max_overlap_cell) > 1:
                 
-                multi_cell_MaxOverlap = True
+                multi_cell_MaxOverlap.append((True,j))
                 
                 # 'MaxOverlap_cell_dend' is a MxN permanence value matrix.
                 # In the case when there are more than 1 cells with a max overlap with 
@@ -267,6 +246,7 @@ class HTM_NET():
                 # Re-assigning back again to the original dendrite of the cell
                 self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend
                 
+                # Re-initializing other cells with Max. Overlap
                 for d in range(1,len(max_overlap_cell)):
                     self.net_arch[max_overlap_cell[d],j].dendrites[max_overlap_dendrite[d]] = \
                         np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])                 
@@ -304,7 +284,7 @@ class HTM_NET():
         
         
         
-        return multi_cell_MaxOverlap
+        return np.array(multi_cell_MaxOverlap)
     
     
     def intrinsic_plasticity(self):
