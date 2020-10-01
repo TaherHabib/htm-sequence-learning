@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import comb as ncr
 
 
 def dot_prod(matrix_1=None, matrix_2=None):
@@ -30,3 +31,23 @@ def dot_prod(matrix_1=None, matrix_2=None):
         result.append(np.sum(mult_res[i], dtype=np.float64))
     
     return np.array(result, dtype=np.float64)
+
+
+
+# Calculation of Probability for a False Match of SDRs------------------------
+def false_match_prob(a,n,s,th):
+    summ = 0
+    for i in range(th, s+1):
+        summ += ncr(s,i, exact=True)*ncr(n-s,a-i, exact=True)
+    
+    prob = summ/ncr(n,a, exact=True)
+    return prob
+
+# =============================================================================
+# a = 25 # value of 'k'
+# n = 1400 # total cells in network
+# s = 32 # number of connected synapses on a dendritic segment
+# th = 15  # NMDA threshold 
+#         
+# false_match_prob(a,n,s,th)
+# =============================================================================

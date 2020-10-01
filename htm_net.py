@@ -211,6 +211,7 @@ class HTM_NET():
         multi_cell_MaxOverlap = []
                 
         for j in unpredicted_cols:
+            
             overlap = [] # 'overlap' will eventually be a list of np.arrays.
                          # shape: (self.M, <cell.n_dendrites>)
             
