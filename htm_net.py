@@ -77,10 +77,14 @@ class HTM_NET():
         
         # ASSUMPTION: There will never be two dendrites on the same cell that
         # get activated to the same activity pattern in the population.
-    
-        cell_idx_multiDend = []
         
+        # MxN binary numpy array to store the predictive states of all cells.
         pred = np.zeros([self.M, self.N])
+        
+        # MxN numpy array to store the index of the dendrites that led to the
+        # predictive states of the cell. For unpredicted cells, the values are NaN.
+        pred_dend = np.empty([self.M, self.N], dtype=object)
+        pred_dend[:] = np.nan
         
         for j in range(self.N):
             for i in range(self.M):
@@ -94,10 +98,9 @@ class HTM_NET():
                 # if any denrite of the cell is active, then the cell becomes predictive.
                 if any(cell_dendActivity):
                     pred[i,j] = 1.0
-                    if np.count_nonzero(cell_dendActivity) > 1:
-                        cell_idx_multiDend.append((i,j))
-                
-        return pred, np.array(cell_idx_multiDend)
+                    pred_dend[i,j] = np.where(cell_dendActivity)[0]
+                    
+        return pred, pred_dend
     
     
     def get_LRD_prediction(self):
@@ -170,9 +173,9 @@ class HTM_NET():
                 curr_state[:,j] = curr_state[:,j] - 1
                 
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
-        curr_pred, cell_idx_multiDendrite = self.get_onestep_prediction(curr_state)
+        curr_pred, curr_pred_dend = self.get_onestep_prediction(curr_state)
         
-        return curr_state, curr_pred, cell_idx_multiDendrite
+        return curr_state, curr_pred, curr_pred_dend
     
     
     def do_net_synaPermUpdate(self, prev_input=None, prev_state=None):

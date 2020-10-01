@@ -82,7 +82,7 @@ dict_htm_preds = {}
 # cell in the network with time. 
 dict_htm_networks = {}
 
-dict_htm_multiDend = {}
+dict_htm_preds_dend = {}
 
 for string_idx in range(nof_strings):
     
@@ -90,8 +90,8 @@ for string_idx in range(nof_strings):
         
     htm_states=[]
     htm_preds=[]
+    htm_preds_dend=[]
     htm_networks=[]
-    htm_multiDend=[]
     
     curr_state = htm_init_state
     curr_pred = htm_init_state
@@ -100,12 +100,12 @@ for string_idx in range(nof_strings):
     for step in range(len(in_string)):
         
         # in_string[step] is a binary 1xN vector (np.array) with 'k' 1s.
-        curr_state, curr_pred, cell_idx_multiDendrite = htm_network.get_net_state(prev_pred=curr_pred,
-                                                                                  curr_input=in_string[step])
+        curr_state, curr_pred, curr_pred_dend = htm_network.get_net_state(prev_pred=curr_pred,
+                                                                          curr_input=in_string[step])
         
         htm_states.append(curr_state)
         htm_preds.append(curr_pred)
-        htm_multiDend.append(cell_idx_multiDendrite)
+        htm_preds_dend.append(curr_pred_dend)
         htm_networks.append(htm_network.get_NETWORK())
         
     
@@ -119,7 +119,7 @@ for string_idx in range(nof_strings):
     
     dict_htm_states[key] = np.array(htm_states) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_preds[key] = np.array(htm_preds) # numpy array of shape: (<len(in_string)>,M,N)
-    dict_htm_multiDend[key] = np.array(htm_multiDend)
+    dict_htm_preds_dend[key] = np.array(htm_preds_dend)
     dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>,M,N)
 
 
