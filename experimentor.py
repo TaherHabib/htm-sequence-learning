@@ -117,7 +117,23 @@ for string_idx in range(nof_strings):
         htm_states.append(curr_state)
         htm_preds.append(curr_pred)
         htm_preds_dend.append(curr_pred_dend)
-    
+        
+        #----------------------------------------------------------------------
+        # THIS IS WHERE PERFORMANCE MEASUREMENT WILL OCCUR !!!
+        #
+        # Take 'curr_pred' (a matrix of shape MxN) from the line above and 
+        # compare it with 'list_out_strings[string_idx][step]' (also a matrix 
+        # of shape MxN). 
+        # 
+        # NO WAIT!
+        # 
+        # I am anyway collecting the network predictions at each timestep in 
+        # 'htm_preds'. I can then later on use this to measure the performance
+        # of the network, after the network has run over a few thousand
+        # strings.
+        #----------------------------------------------------------------------
+        
+        
         if step == 0:
             continue
         
@@ -140,9 +156,8 @@ for string_idx in range(nof_strings):
     dict_htm_preds[key] = np.array(htm_preds) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_preds_dend[key] = np.array(htm_preds_dend) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>,M,N)
-    dict_htm_multicell_MaxOverlap = np.array(htm_multicell_MaxOverlap) 
-
-
+    dict_htm_multicell_MaxOverlap = np.array(htm_multicell_MaxOverlap) # numpy array of shape: 
+                                                                       # (<len(in_string)>,)
 
 
 # IMPORTANT       
