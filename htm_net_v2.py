@@ -191,14 +191,18 @@ class HTM_NET():
     def do_net_synaPermUpdate(self, prev_state=None, prev_pred=None, prev_pred_dend=None, 
                               prev_input=None):
         
-         
+        #----------------------------------------------------------------------
+        # From winning columns, collect all columns that are unpredicted 
+        # (minicols with all 1s) and correctly and incorrectly predicted 
+        # (minicols with more than one 1).
+        #---------------------------------------------------------------------
+        
         winning_cols = np.where(prev_input)[0] # list of length <k>
         
         # 'all_predicted_cols' will be np.array of max. possible length <self.N>
         all_predicted_cols = np.unique(np.where(prev_pred)[1]) 
         
-         # From winning columns, collect all columns that are unpredicted (minicols with 
-        # all 1s) and predicted (minicols with more than one 1).
+        
         unpredicted_cols = []
                     
         for j in winning_cols:
