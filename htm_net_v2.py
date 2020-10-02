@@ -107,7 +107,8 @@ class HTM_NET():
                 # if any denrite of the cell is active, then the cell becomes predictive.
                 if any(cell_dendActivity):
                     pred[i,j] = 1.0
-                    pred_dend[i,j] = np.where(cell_dendActivity)[0]
+                    pred_dend[i,j] = np.where(cell_dendActivity)[0] # RHS would be 1D numpy array of 
+                                                                    # max. length <cell.n_dendrites>
                     
         return pred, pred_dend
     
@@ -174,7 +175,7 @@ class HTM_NET():
         
         curr_state = curr_state*prev_pred + curr_state
         
-        winning_cols = list(np.where(curr_input)[0])
+        winning_cols = np.where(curr_input)[0]
         
         for j in winning_cols:
             mc = curr_state[:,j]
@@ -190,22 +191,23 @@ class HTM_NET():
     def do_net_synaPermUpdate(self, prev_state=None, prev_pred=None, prev_pred_dend=None, 
                               prev_input=None):
         
+         
+        winning_cols = np.where(prev_input)[0] # list of length <k>
         
-        # From winning columns, collect all columns that are unpredicted (minicols with 
-        # all 1s) and predicted (minicols with more than one 1) 
+        # 'all_predicted_cols' will be np.array of max. possible length <self.N>
+        all_predicted_cols = np.unique(np.where(prev_pred)[1]) 
         
-        winning_cols = list(np.where(prev_input)[0])
-        
+         # From winning columns, collect all columns that are unpredicted (minicols with 
+        # all 1s) and predicted (minicols with more than one 1).
         unpredicted_cols = []
-        predicted_cols = []
                     
         for j in winning_cols:
             if prev_state[:,j].sum() == self.M:
                 unpredicted_cols.append(j)
         
-        for j in winning_cols:
-            if prev_state[:,j].sum() >= 1 and prev_state[:,j].sum() < self.M:
-                predicted_cols.append(j)
+        corr_predicted_cols = [col for col in winning_cols if col not in unpredicted_cols]
+        
+        incorr_predicted_cols = [col for col in all_predicted_cols if col not in corr_predicted_cols]
         
         
         #_______________________CASE I_________________________________________
@@ -237,7 +239,7 @@ class HTM_NET():
             max_overlap_cell = np.where(overlap==np.amax(overlap))[0]
             max_overlap_dendrite = np.where(overlap==np.amax(overlap))[1]
             
-            if len(max_overlap_cell) > 1:
+            if len(max_overlap_cell) > 1: # (The RARE CASE)
                 
                 multi_cell_MaxOverlap.append((True,j))
                 
@@ -262,6 +264,7 @@ class HTM_NET():
                         np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])                 
                     
             else:
+                
                 MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
                 
                 # Decrement all synapses by p-
@@ -277,14 +280,18 @@ class HTM_NET():
             
         #_______________________CASE II________________________________________
         
-        # When winning column IS PREDICTED
+        # When winning column IS PREDICTED (can have more than 1 predicted cells)
         # ---------------------------------------------------------------------
         
         for j in predicted_cols:
             
-            i = np.where(prev_state[:,j]==1)[0][0]
+            # extract the i-indices of all the predicted cells in the column
+            cells_i = np.where(prev_state[:,j]==1)[0]
             
-            pred_dendrite = self.net_arch[i,j].dendrites[]
+            # reinforce the active dendrites for all of the predicted cells in
+            # the minicolumn.
+            for i in cells_i:
+                pred_dendrite = self.net_arch[i,j].dendrites[]
             
         
         

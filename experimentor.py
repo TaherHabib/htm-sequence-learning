@@ -114,6 +114,8 @@ for string_idx in range(nof_strings):
         
         # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
         multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(prev_state=curr_state,
+                                                                  prev_pred=curr_pred,
+                                                                  prev_pred_dend=curr_pred_dend,
                                                                   prev_input=in_string[step])
         
     
