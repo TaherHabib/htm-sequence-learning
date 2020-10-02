@@ -27,6 +27,9 @@ nmda_threshold = 15
 permanence_threshold = 0.40
 init_permanence = 0.25
 
+len_activity_horizon = 
+activity_threshold = 
+
 perm_decrement = 0.05 # p-
 perm_increment = 2*perm_decrement # p+
 perm_decay = 0.1*perm_decrement # p--
@@ -48,8 +51,6 @@ htm_network = HTM_NET(M, N, k,
                       perm_decrement=perm_decrement, perm_increment=perm_increment,
                       perm_decay=perm_decay, perm_boost=perm_boost)
 
-htm_init_state = np.zeros([M,N])
-
 
 # =================GENERATING INPUT AND PREDICTIONS STRINGS====================
 
@@ -69,32 +70,40 @@ for string_oh in list_in_strings:
     string_alpha = rg.OnehotToWord(string_oh)
     in_strings_alpha.append(string_alpha)
 
-# =============================================================================
 
-# array to store MxN binary state matrix of HTM network at each timestep
+# =======================STARTING EXPERIMENT===================================
+
+# dict to store MxN binary state matrix of HTM network at each timestep, for 
+# each input string as key.
 dict_htm_states = {}
 
-# array to store MxN binary predition matrix of HTM network at each timestep
+# dict to store MxN binary predition matrix of HTM network and the dendrites 
+# responsible for those predictions at each timestep, for each input string 
+# as key.
 dict_htm_preds = {}
+dict_htm_preds_dend = {}
 
-# array to store MxN matrix of HTM cells at each timestep. This storage is mainly 
-# to have an access to the evolution of the synaptic permanence values of each 
-# cell in the network with time. 
+# dict to store MxN matrix of HTM cells at each timestep, for each input
+# string as key. This storage is mainly to have an access to the evolution of 
+# the synaptic permanence values of each cell in the network with time. 
 dict_htm_networks = {}
 
-dict_htm_preds_dend = {}
 
 for string_idx in range(nof_strings):
     
-    key = in_strings_alpha[string_idx]
-        
+    key = in_strings_alpha[string_idx]    
+    
+    curr_state = np.zeros([M,N])
+    curr_pred = np.zeros([M,N])
+    curr_pred_dend = np.empty([M,N], dtype=object)
+    curr_pred_dend[:] = np.nan
+    
     htm_states=[]
     htm_preds=[]
     htm_preds_dend=[]
     htm_networks=[]
     
-    curr_state = htm_init_state
-    curr_pred = htm_init_state
+    
     in_string = list_in_strings[string_idx]
 
     for step in range(len(in_string)):
@@ -107,17 +116,21 @@ for string_idx in range(nof_strings):
         htm_preds.append(curr_pred)
         htm_preds_dend.append(curr_pred_dend)
         htm_networks.append(htm_network.get_NETWORK())
-        
     
-        # PRUNING Negative Permanence Values
-        htm_network.prune_net_NegPermanences()
+        if step == 0:
+            continue
         
-        # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
-        multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(prev_state=curr_state,
-                                                                  prev_pred=curr_pred,
-                                                                  prev_pred_dend=curr_pred_dend,
-                                                                  prev_input=in_string[step])
-        
+        else:
+            
+            # PRUNING Negative Permanence Values
+            htm_network.prune_net_NegPermanences()
+            
+            # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
+            multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(curr_state=curr_state,
+                                                                      curr_pred=htm_preds[step-1],
+                                                                      curr_pred_dend=htm_preds_dend[step-1],
+                                                                      curr_input=in_string[step])
+            
     
     dict_htm_states[key] = np.array(htm_states) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_preds[key] = np.array(htm_preds) # numpy array of shape: (<len(in_string)>,M,N)
@@ -166,10 +179,10 @@ for string_idx in range(nof_strings):
 # Thus, nof connected synapses per neuron = 32*32 = 1024, which is ~73% of 
 # the totol network size.
 
-# NMDA threshold = 12.
-# NMDA threshold/nof synapses per dendrites = 12/32 ~ 37.5%
+# NMDA threshold = 15.
+# NMDA threshold/nof synapses per dendrites = 15/32 ~ 47%
 
-# False match probability = 8.733769726186268e-15
+# False match probability = 1.492248791690464e-20
 
 
 
@@ -186,11 +199,11 @@ for string_idx in range(nof_strings):
 #      array([4.5, 5. , 0.8]),
 #      array([11.25, 12.5 ,  2.  ]),
 #      array([ 1. ,  2. , 12.5])]
-# Then, np.where(b==np.amax(b)) will give:
-# (array([2, 3]), array([1, 2])) as ouput. 
+# Then, np.where(b==np.amax(b)) will give: (array([2, 3]), array([1, 2])) as ouput. 
 
 
 
 #_________IV__________
 
-
+# On Deciding on the activity horizon and threshold for boosting cell activity
+# 

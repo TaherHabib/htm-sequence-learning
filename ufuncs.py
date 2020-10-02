@@ -35,12 +35,13 @@ def dot_prod(matrix_1=None, matrix_2=None):
 
 
 # Calculation of Probability for a False Match of SDRs------------------------
-def false_match_prob(a,n,s,th):
+def false_match_prob(k,tot_neurons,connSynapses_perdend,nmda_threshold):
     summ = 0
-    for i in range(th, s+1):
-        summ += ncr(s,i, exact=True)*ncr(n-s,a-i, exact=True)
+    for i in range(nmda_threshold, connSynapses_perdend+1):
+        summ += ncr(connSynapses_perdend,i, exact=True)*ncr(tot_neurons-connSynapses_perdend,k-i, exact=True)
     
-    prob = summ/ncr(n,a, exact=True)
+    prob = summ/ncr(tot_neurons,k, exact=True)
+    
     return prob
 
 # =============================================================================

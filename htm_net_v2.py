@@ -85,7 +85,8 @@ class HTM_NET():
         """
         
         # ASSUMPTION: There will never be two dendrites on the same cell that
-        # get activated to the same activity pattern in the population.
+        # get activated to the same activity pattern in the population. BUT 
+        # this assumption may be broken (?). CHECK
         
         # MxN binary numpy array to store the predictive states of all cells.
         pred = np.zeros([self.M, self.N])
@@ -99,7 +100,7 @@ class HTM_NET():
             for i in range(self.M):
                 cell = self.net_arch[i,j]
                 cell_connSynapses = cell.get_cell_connSynapses() # is a boolean list of 32 MxN matrices, 
-                                                                 # shape: (32,M,N)
+                                                                 # shape: (<cell.n_dendrites>,M,N)
                 
                 # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
                 cell_dendActivity = dot_prod(net_state,cell_connSynapses)>cell.nmda_th
@@ -188,6 +189,7 @@ class HTM_NET():
         return curr_state, curr_pred, curr_pred_dend
     
     
+    
     def do_net_synaPermUpdate(self, prev_state=None, prev_pred=None, prev_pred_dend=None, 
                               prev_input=None):
         
@@ -195,9 +197,9 @@ class HTM_NET():
         # From winning columns, collect all columns that are unpredicted 
         # (minicols with all 1s) and correctly and incorrectly predicted 
         # (minicols with more than one 1).
-        #---------------------------------------------------------------------
+        #----------------------------------------------------------------------
         
-        winning_cols = np.where(prev_input)[0] # list of length <k>
+        winning_cols = np.where(prev_input)[0] # np.array of length <k>
         
         # 'all_predicted_cols' will be np.array of max. possible length <self.N>
         all_predicted_cols = np.unique(np.where(prev_pred)[1]) 
@@ -212,7 +214,6 @@ class HTM_NET():
         corr_predicted_cols = [col for col in winning_cols if col not in unpredicted_cols]
         
         incorr_predicted_cols = [col for col in all_predicted_cols if col not in corr_predicted_cols]
-        
         
         #_______________________CASE I_________________________________________
         
@@ -271,34 +272,64 @@ class HTM_NET():
                 
                 MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
                 
-                # Decrement all synapses by p-
-                MaxOverlap_cell_dend = MaxOverlap_cell_dend - self.perm_decrement*MaxOverlap_cell_dend
+                # Increment active synapses by p+ and Decrement all synapses by p-
+                MaxOverlap_cell_dend = MaxOverlap_cell_dend + self.perm_increment*prev_state 
+                - self.perm_decrement*MaxOverlap_cell_dend
                 
-                # Increment active synapses by p+
-                MaxOverlap_cell_dend = MaxOverlap_cell_dend + self.perm_increment*prev_state
-            
                 # Re-assigning back again to the original dendrite of the cell
                 self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend
                 
             
-            
         #_______________________CASE II________________________________________
         
-        # When winning column IS PREDICTED (can have more than 1 predicted cells)
+        # When winning column IS CORRECTLY PREDICTED (can have more than 1 
+        # predicted cells)
         # ---------------------------------------------------------------------
         
-        for j in predicted_cols:
+        for j in corr_predicted_cols:
             
             # extract the i-indices of all the predicted cells in the column
-            cells_i = np.where(prev_state[:,j]==1)[0]
+            cells_i = np.where(prev_state[:,j])[0]
             
-            # reinforce the active dendrites for all of the predicted cells in
+            # Reinforce the active dendrites for all of the predicted cells in
             # the minicolumn.
             for i in cells_i:
-                pred_dendrite = self.net_arch[i,j].dendrites[]
+                
+                # for indices of all dendrites that led to cell's prediction.
+                for d in prev_pred_dend[i,j]:
+                    self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d] 
+                    + self.perm_increment*prev_state 
+                    - self.perm_decrement*self.net_arch[i,j].dendrites[d]
             
         
+        #_______________________CASE III_______________________________________
         
+        # When a column IS WRONGLY PREDICTED (can have more than 1 predicted 
+        # cells)
+        # ---------------------------------------------------------------------
+        
+        for j in incorr_predicted_cols:
+            
+            # extract the i-indices of all the WRONGLY predicted cells in the column
+            # Notice that 'prev_pred' is used here instead of 'prev_state' (unlike
+            # case II above), for obvious reasons.
+            cells_i = np.where(prev_pred[:,j])[0]
+            
+            # Punish the active dendrites for all of the wrongly predicted cells 
+            # in the minicolumn.
+            for i in cells_i:
+                
+                # for indices of all dendrites that led to cell's wrong prediction.
+                for d in prev_pred_dend[i,j]:
+                    self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d]
+                    - self.perm_decay*prev_state
+                    
+        
+        #_______________________BOOSTING_______________________________________
+        
+        # Boosting of all the synaptic permanence values of all the cells with 
+        # low activity and/or predictivity.
+        # ---------------------------------------------------------------------
         
         
         

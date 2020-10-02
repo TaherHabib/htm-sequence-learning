@@ -48,12 +48,7 @@ class HTM_CELL():
         connected_synapses = np.array(self.dendrites > self.perm_th) # boolean list of 32 MxN binary matrices, 
                                                                      # shape: (32,M,N)
         return connected_synapses
-        
-    
-    def get_dendrite_MaxOverlap(self):
-        
-        return
-        
+            
         
     def get_cell_synaPermanences(self):
         """
@@ -67,3 +62,9 @@ class HTM_CELL():
         """
         
         return self.dendrites
+    
+    
+    def update_cell_dutycycle(self, prev_state=None, prev_pred=None):
+        
+        
+        return None
