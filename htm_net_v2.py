@@ -1,3 +1,12 @@
+"""
+This version 2 of 'htm_net.py' differs from version 1 in the following manner:
+
+In the case of multiple cells predicted in a single minicolumn, it reinforces all
+of those predicted cells, instead of choosing only one of them – the latter is 
+planned for execution in version 1.
+
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -182,10 +191,11 @@ class HTM_NET():
                               prev_input=None):
         
         
+        # From winning columns, collect all columns that are unpredicted (minicols with 
+        # all 1s) and predicted (minicols with more than one 1) 
+        
         winning_cols = list(np.where(prev_input)[0])
         
-        # From winning columns, collect all columns that are unpredicted (minicols with 
-        # all 1s) and predicted (minicols with only one 1) 
         unpredicted_cols = []
         predicted_cols = []
                     
@@ -194,13 +204,8 @@ class HTM_NET():
                 unpredicted_cols.append(j)
         
         for j in winning_cols:
-            if prev_state[:,j].sum() == 1:
+            if prev_state[:,j].sum() >= 1 and prev_state[:,j].sum() < self.M:
                 predicted_cols.append(j)
-        
-        # From winning columns, collect all columns that are not unpredicted, but have multiple
-        # predicted cells.
-        multi_predicted_cols = [col for col in winning_cols if ((col not in unpredicted_cols) and 
-                                                                (col not in predicted_cols))]
         
         
         #_______________________CASE I_________________________________________
