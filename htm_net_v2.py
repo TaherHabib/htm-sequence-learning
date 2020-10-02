@@ -179,9 +179,8 @@ class HTM_NET():
         winning_cols = np.where(curr_input)[0]
         
         for j in winning_cols:
-            mc = curr_state[:,j]
-            if 2 in mc:
-                curr_state[:,j] = curr_state[:,j] - 1
+            if 2 in curr_state[:,j]:
+                curr_state[:,j] -= 1 
                 
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
         curr_pred, curr_pred_dend = self.get_onestep_prediction(curr_state)
@@ -190,8 +189,9 @@ class HTM_NET():
     
     
     
-    def do_net_synaPermUpdate(self, prev_state=None, prev_pred=None, prev_pred_dend=None, 
-                              prev_input=None):
+    def do_net_synaPermUpdate(self, curr_state=None, prev_state=None, 
+                              prev_pred=None, prev_pred_dend=None, 
+                              curr_input=None):
         
         #----------------------------------------------------------------------
         # From winning columns, collect all columns that are unpredicted 
@@ -199,7 +199,7 @@ class HTM_NET():
         # (minicols with more than one 1).
         #----------------------------------------------------------------------
         
-        winning_cols = np.where(prev_input)[0] # np.array of length <k>
+        winning_cols = np.where(curr_input)[0] # np.array of length <k>
         
         # 'all_predicted_cols' will be np.array of max. possible length <self.N>
         all_predicted_cols = np.unique(np.where(prev_pred)[1]) 
@@ -208,7 +208,7 @@ class HTM_NET():
         unpredicted_cols = []
                     
         for j in winning_cols:
-            if prev_state[:,j].sum() == self.M:
+            if curr_state[:,j].sum() == self.M:
                 unpredicted_cols.append(j)
         
         corr_predicted_cols = [col for col in winning_cols if col not in unpredicted_cols]
@@ -246,7 +246,7 @@ class HTM_NET():
             
             if len(max_overlap_cell) > 1: # (The RARE CASE)
                 
-                multi_cell_MaxOverlap.append((True,j))
+                multi_cell_MaxOverlap.append((j,max_overlap_cell))
                 
                 # 'MaxOverlap_cell_dend' is a MxN permanence value matrix.
                 # In the case when there are more than 1 cells with a max overlap with 
@@ -270,6 +270,8 @@ class HTM_NET():
                     
             else:
                 
+                multi_cell_MaxOverlap = np.nan
+                
                 MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
                 
                 # Increment active synapses by p+ and Decrement all synapses by p-
@@ -289,7 +291,7 @@ class HTM_NET():
         for j in corr_predicted_cols:
             
             # extract the i-indices of all the predicted cells in the column
-            cells_i = np.where(prev_state[:,j])[0]
+            cells_i = np.where(prev_pred[:,j])[0]
             
             # Reinforce the active dendrites for all of the predicted cells in
             # the minicolumn.
@@ -330,9 +332,6 @@ class HTM_NET():
         # Boosting of all the synaptic permanence values of all the cells with 
         # low activity and/or predictivity.
         # ---------------------------------------------------------------------
-        
-        
-        
         
         
         

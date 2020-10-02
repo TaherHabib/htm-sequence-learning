@@ -20,6 +20,11 @@ M = 8
 N = 175
 k = 25
 
+perm_decrement = 0.05 # p-
+perm_increment = 2*perm_decrement # p+
+perm_decay = 0.1*perm_decrement # p--
+perm_boost = 0.1*perm_decrement # p++
+
 # Cell params
 dendrites_percell = 32
 connSynapses_perdend = 32
@@ -29,11 +34,6 @@ init_permanence = 0.25
 
 len_activity_horizon = 
 activity_threshold = 
-
-perm_decrement = 0.05 # p-
-perm_increment = 2*perm_decrement # p+
-perm_decay = 0.1*perm_decrement # p--
-perm_boost = 0.1*perm_decrement # p++
 
 # Task params
 do_ERG = False
@@ -88,6 +88,8 @@ dict_htm_preds_dend = {}
 # the synaptic permanence values of each cell in the network with time. 
 dict_htm_networks = {}
 
+dict_htm_multicell_MaxOverlap = {}
+
 
 for string_idx in range(nof_strings):
     
@@ -101,8 +103,8 @@ for string_idx in range(nof_strings):
     htm_states=[]
     htm_preds=[]
     htm_preds_dend=[]
-    htm_networks=[]
-    
+    htm_networks=[htm_network.get_NETWORK()]
+    htm_multicell_MaxOverlap = []
     
     in_string = list_in_strings[string_idx]
 
@@ -115,7 +117,6 @@ for string_idx in range(nof_strings):
         htm_states.append(curr_state)
         htm_preds.append(curr_pred)
         htm_preds_dend.append(curr_pred_dend)
-        htm_networks.append(htm_network.get_NETWORK())
     
         if step == 0:
             continue
@@ -126,17 +127,20 @@ for string_idx in range(nof_strings):
             htm_network.prune_net_NegPermanences()
             
             # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
-            multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(curr_state=curr_state,
-                                                                      curr_pred=htm_preds[step-1],
-                                                                      curr_pred_dend=htm_preds_dend[step-1],
+            multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
+                                                                      prev_state=htm_states[step-1],
+                                                                      prev_pred=htm_preds[step-1], 
+                                                                      prev_pred_dend=htm_preds_dend[step-1], 
                                                                       curr_input=in_string[step])
+            htm_networks.append(htm_network.get_NETWORK())
+            htm_multicell_MaxOverlap.append(multi_cell_MaxOverlap)
             
     
     dict_htm_states[key] = np.array(htm_states) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_preds[key] = np.array(htm_preds) # numpy array of shape: (<len(in_string)>,M,N)
-    dict_htm_preds_dend[key] = np.array(htm_preds_dend)
+    dict_htm_preds_dend[key] = np.array(htm_preds_dend) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>,M,N)
-
+    dict_htm_multicell_MaxOverlap = np.array(htm_multicell_MaxOverlap) 
 
 
 
