@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 
 
-from htm_cell import HTM_CELL
-from htm_net import HTM_NET
+#from htm_cell import HTM_CELL
+from htm_net_v2 import HTM_NET
 from rebergrammar_generator import *
 
 
@@ -32,8 +32,8 @@ nmda_threshold = 15
 permanence_threshold = 0.40
 init_permanence = 0.25
 
-len_activity_horizon = 
-activity_threshold = 
+#len_activity_horizon = 
+#activity_threshold = 
 
 # Task params
 do_ERG = False
@@ -55,7 +55,7 @@ htm_network = HTM_NET(M, N, k,
 # =================GENERATING INPUT AND PREDICTIONS STRINGS====================
 
 # Generate Input strings and Predictions
-nof_strings = 1
+nof_strings = 100
 
 if do_ERG:
     rg_inputoutput = rg.get_n_erg(nof_strings)
@@ -144,7 +144,7 @@ for string_idx in range(nof_strings):
         # LEARNING TO PREDICT 'Z' at the penultimate step
         if step == len(in_string)-1:
             
-            z_minicols = np.zeros[N]
+            z_minicols = np.zeros(N)
             z_minicols[df_CharsToMinicols['Z']] = 1 
             
             
@@ -173,13 +173,6 @@ for string_idx in range(nof_strings):
     dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>+1,M,N)
     dict_htm_multicell_MaxOverlap = np.array(htm_multicell_MaxOverlap) # numpy array of shape: 
                                                                        # (<len(in_string)>+1,)
-
-
-# IMPORTANT       
-# SOLVE THE PROBLEM OF COMPATIBILITY OF GET_NET_STATE()'S OUTPUT WITH THE OUTPUTS OF
-# REBER GRAMMAR GENERATING FUNCTION. THERE IS NO FINAL 'Z' IN THE END OF EACH STRING (AS INPUT),
-# BUT THERE IS A PREDICTION FOR 'Z'.
-        
         
         
 # ================================NOTES=======================================
