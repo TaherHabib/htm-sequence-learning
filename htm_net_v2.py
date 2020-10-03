@@ -313,8 +313,6 @@ class HTM_NET():
         for j in incorr_predicted_cols:
             
             # extract the i-indices of all the WRONGLY predicted cells in the column
-            # Notice that 'prev_pred' is used here instead of 'prev_state' (unlike
-            # case II above), for obvious reasons.
             cells_i = np.where(prev_pred[:,j])[0]
             
             # Punish the active dendrites for all of the wrongly predicted cells 

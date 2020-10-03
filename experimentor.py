@@ -107,7 +107,9 @@ for string_idx in range(nof_strings):
     htm_multicell_MaxOverlap = []
     
     in_string = list_in_strings[string_idx]
-
+    
+    # 'len(in_string) is actually one less than the actual length of the string,
+    # due to the final ommission of 'Z'.
     for step in range(len(in_string)):
         
         # in_string[step] is a binary 1xN vector (np.array) with 'k' 1s.
@@ -118,24 +120,10 @@ for string_idx in range(nof_strings):
         htm_preds.append(curr_pred)
         htm_preds_dend.append(curr_pred_dend)
         
-        #----------------------------------------------------------------------
-        # THIS IS WHERE PERFORMANCE MEASUREMENT WILL OCCUR !!!
-        #
-        # Take 'curr_pred' (a matrix of shape MxN) from the line above and 
-        # compare it with 'list_out_strings[string_idx][step]' (also a matrix 
-        # of shape MxN). 
-        # 
-        # NO WAIT!
-        # 
-        # I am anyway collecting the network predictions at each timestep in 
-        # 'htm_preds'. I can then later on use this to measure the performance
-        # of the network, after the network has run over a few thousand
-        # strings.
-        #----------------------------------------------------------------------
-        
-        
         if step == 0:
-            continue
+            
+            # No learning can occur for 'A' and its prediction. 
+            continue 
         
         else:
             
@@ -143,6 +131,7 @@ for string_idx in range(nof_strings):
             htm_network.prune_net_NegPermanences()
             
             # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
+            # Here, the network is learning to predict for symbol that is currrently in 'in_string[step]'
             multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
                                                                       prev_state=htm_states[step-1],
                                                                       prev_pred=htm_preds[step-1], 
@@ -151,13 +140,39 @@ for string_idx in range(nof_strings):
             htm_networks.append(htm_network.get_NETWORK())
             htm_multicell_MaxOverlap.append(multi_cell_MaxOverlap)
             
+        
+        # LEARNING TO PREDICT 'Z' at the penultimate step
+        if step == len(in_string)-1:
+            
+            z_minicols = np.zeros[N]
+            z_minicols[df_CharsToMinicols['Z']] = 1 
+            
+            
+            curr_state, _, _ = htm_network.get_net_state(prev_pred=curr_pred,
+                                                         curr_input=z_minicols)
+            htm_states.append(curr_state)
+            # Since there won't be any predictions occurring at the timestep of 'Z', as input,
+            # 'curr_pred' and 'curr_pred_dend' need not be appended at all. Also, NONE of the cells
+            # in the network would be reinforcing their pre-synapses with the cells responsible
+            # for 'Z'. In other words, the output of 'dot_prod(net_state,cell_connSynapses)' in 
+            # 'get_onestep_prediction()' will always be all zero, at this step!
+            
+            multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
+                                                                      prev_state=htm_states[step],
+                                                                      prev_pred=htm_preds[step], 
+                                                                      prev_pred_dend=htm_preds_dend[step], 
+                                                                      curr_input=z_minicols)
+            htm_networks.append(htm_network.get_NETWORK())
+            htm_multicell_MaxOverlap.append(multi_cell_MaxOverlap)
+            
+            
     
-    dict_htm_states[key] = np.array(htm_states) # numpy array of shape: (<len(in_string)>,M,N)
+    dict_htm_states[key] = np.array(htm_states) # numpy array of shape: (<len(in_string)>+1,M,N)
     dict_htm_preds[key] = np.array(htm_preds) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_preds_dend[key] = np.array(htm_preds_dend) # numpy array of shape: (<len(in_string)>,M,N)
-    dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>,M,N)
+    dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>+1,M,N)
     dict_htm_multicell_MaxOverlap = np.array(htm_multicell_MaxOverlap) # numpy array of shape: 
-                                                                       # (<len(in_string)>,)
+                                                                       # (<len(in_string)>+1,)
 
 
 # IMPORTANT       
@@ -226,3 +241,21 @@ for string_idx in range(nof_strings):
 
 # On Deciding on the activity horizon and threshold for boosting cell activity
 # 
+
+
+#----------------------------------------------------------------------
+        # THIS IS WHERE PERFORMANCE MEASUREMENT WILL OCCUR !!!
+        #
+        # Take 'curr_pred' (a matrix of shape MxN) from the line above and 
+        # compare it with 'list_out_strings[string_idx][step]' (also a matrix 
+        # of shape MxN). 
+        # 
+        # NO WAIT!
+        # 
+        # I am anyway collecting the network predictions at each timestep in 
+        # 'htm_preds'. I can then later on use this to measure the performance
+        # of the network, after the network has run over a few thousand
+        # strings.
+        #----------------------------------------------------------------------
+        
+        
