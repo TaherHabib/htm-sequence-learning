@@ -122,7 +122,7 @@ class Reber_Grammar():
                 outpt[self.df_CharsToMinicols[o]] = 1
             outseq_oh.append(outpt)
         
-        return inseq_oh, outseq_oh
+        return np.array(inseq_oh), np.array(outseq_oh)
     
     
     def get_n_srg(self, n, minLength=5):
@@ -277,7 +277,7 @@ class Reber_Grammar():
         # Entering the prediction of embedded char at the second last position
         emb_out_oh.insert(len(emb_out_oh)-1, emb_char_oh)
     
-        return emb_in_oh, emb_out_oh
+        return np.array(emb_in_oh), np.array(emb_out_oh)
     
     
     def get_n_erg(self, n, minLength=5):
