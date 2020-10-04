@@ -29,7 +29,7 @@ perm_boost = 0.1*perm_decrement # p++
 
 # Cell params
 dendrites_percell = 32
-connSynapses_perdend = 32
+connSynapses_perdend = 32 # not functional, at the moment
 nmda_threshold = 15
 permanence_threshold = 0.40
 init_permanence = 0.25
@@ -77,27 +77,20 @@ for string_oh in list_in_strings:
 
 # =======================STARTING EXPERIMENT===================================
 
-# dict to store MxN binary state matrix of HTM network at each timestep, for 
-# each input string as key.
-dict_htm_states = {}
+# DataFrame to store results for each string in 'list_in_strings'
+df_res = pd.DataFrame(columns=('reber_string', 'htm_states', 'htm_preds', 'htm_preds_dend', 'htm_networks'))
 
-# dict to store MxN binary predition matrix of HTM network and the dendrites 
-# responsible for those predictions at each timestep, for each input string 
-# as key.
-dict_htm_preds = {}
-dict_htm_preds_dend = {}
+# 'htm_states' and 'htm_preds' store MxN binary state and prediction matrix of HTM network at each timestep 
+# (each letter), for each input reber string, respectively.
 
-# dict to store MxN matrix of HTM cells at each timestep, for each input
-# string as key. This storage is mainly to have an access to the evolution of 
-# the synaptic permanence values of each cell in the network with time. 
-dict_htm_networks = {}
+# 'htm_preds_dend' stores MxN matrix of responsible active dendrites for each of the MxN neuron's prediction
+# in HTM network at each timestep (each letter), for each input reber string.
 
-dict_htm_multicell_MaxOverlap = {}
-
+# 'htm_networks' stores MxN matrix of HTM cells at each timestep, for each input reber string. This storage 
+# is mainly to have an access to the evolution of the synaptic permanence values of each cell in the 
+# network with time. 
 
 for string_idx in range(nof_strings):
-    
-    key = in_strings_alpha[string_idx]    
     
     curr_state = np.zeros([M,N])
     curr_pred = np.zeros([M,N])
@@ -108,9 +101,9 @@ for string_idx in range(nof_strings):
     htm_preds=[]
     htm_preds_dend=[]
     htm_networks=[htm_network.get_NETWORK()]
-    htm_multicell_MaxOverlap = []
     
     in_string = list_in_strings[string_idx]
+    in_string_alpha = in_strings_alpha[string_idx]    
     
     # 'len(in_string) is actually one less than the actual length of the string,
     # due to the final ommission of 'Z'.
@@ -143,7 +136,9 @@ for string_idx in range(nof_strings):
                                                                       prev_pred_dend=htm_preds_dend[step-1], 
                                                                       curr_input=in_string[step])
             htm_networks.append(htm_network.get_NETWORK())
-            htm_multicell_MaxOverlap.append(multi_cell_MaxOverlap)
+            
+            if multi_cell_MaxOverlap == True:
+                print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
             
         
         # LEARNING TO PREDICT 'Z' at the penultimate step
@@ -168,17 +163,20 @@ for string_idx in range(nof_strings):
                                                                       prev_pred_dend=htm_preds_dend[step], 
                                                                       curr_input=z_minicols)
             htm_networks.append(htm_network.get_NETWORK())
-            htm_multicell_MaxOverlap.append(multi_cell_MaxOverlap)
+            
+            if multi_cell_MaxOverlap == True:
+                print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
             
             
+    df_res.loc[string_idx] = [in_string_alpha, np.array(htm_states), np.array(htm_preds), 
+                              np.array(htm_preds_dend), np.array(htm_networks)]
+    # np.array(htm_states) is numpy array of shape: (<len(in_string)>+1,M,N)
+    # np.array(htm_preds) is numpy array of shape: (<len(in_string)>,M,N)
+    # np.array(htm_preds_dend) is numpy array of shape: (<len(in_string)>,M,N)
+    # np.array(htm_networks) numpy array of shape: (<len(in_string)>+1,M,N)
+
     
-    dict_htm_states[key] = np.array(htm_states) # numpy array of shape: (<len(in_string)>+1,M,N)
-    dict_htm_preds[key] = np.array(htm_preds) # numpy array of shape: (<len(in_string)>,M,N)
-    dict_htm_preds_dend[key] = np.array(htm_preds_dend) # numpy array of shape: (<len(in_string)>,M,N)
-    dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>+1,M,N)
-    dict_htm_multicell_MaxOverlap = np.array(htm_multicell_MaxOverlap, dtype=object) # numpy array of shape: 
-                                                                                     # (<len(in_string)>+1,)
-  
+
 print(time.time()-start)
         
 # ================================NOTES=======================================

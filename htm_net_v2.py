@@ -221,7 +221,7 @@ class HTM_NET():
         # initial stage after initialization of the network)
         # ---------------------------------------------------------------------
         
-        multi_cell_MaxOverlap = []
+        multi_cell_MaxOverlap = False
                 
         for j in unpredicted_cols:
             
@@ -246,7 +246,7 @@ class HTM_NET():
             
             if len(max_overlap_cell) > 1: # (The RARE CASE)
                 
-                multi_cell_MaxOverlap.append((j,max_overlap_cell))
+                multi_cell_MaxOverlap = True
                 
                 # 'MaxOverlap_cell_dend' is a MxN permanence value matrix.
                 # In the case when there are more than 1 cells with a max overlap with 
@@ -269,8 +269,6 @@ class HTM_NET():
                         np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])                 
                     
             else:
-                
-                multi_cell_MaxOverlap = np.nan
                 
                 MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
                 
@@ -333,7 +331,7 @@ class HTM_NET():
         
         
         
-        return np.array(multi_cell_MaxOverlap)
+        return multi_cell_MaxOverlap
     
     
     def intrinsic_plasticity(self):
