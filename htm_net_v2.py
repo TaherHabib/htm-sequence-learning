@@ -353,7 +353,7 @@ class HTM_NET():
         return self.net_arch
     
     
-    def prune_net_NegPermanences(self):
+    def prune_net_Permanences(self):
         """
         
 
@@ -367,6 +367,7 @@ class HTM_NET():
             for j in range(self.N):
                 cell = self.net_arch[i,j]
                 cell.dendrites[cell.dendrites<0] = 0
+                cell.dendrites[cell.dendrites>1] = 1
                 
         return
     

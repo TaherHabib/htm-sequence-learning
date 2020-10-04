@@ -7,6 +7,8 @@ tasks.
 import numpy as np
 import pandas as pd
 
+import time
+
 
 #from htm_cell import HTM_CELL
 from htm_net_v2 import HTM_NET
@@ -40,6 +42,8 @@ do_ERG = False
 
 
 # ========================INITIALIZING========================================
+
+start = time.time()
 
 rg = Reber_Grammar(N, k)
 df_CharsToMinicols = rg.df_CharsToMinicols
@@ -127,8 +131,9 @@ for string_idx in range(nof_strings):
         
         else:
             
-            # PRUNING Negative Permanence Values
-            htm_network.prune_net_NegPermanences()
+            # PRUNING Negative Permanence Values (set them to 0)
+            # PRUNING Positive Permanence Values (set them to 1)
+            htm_network.prune_net_Permanences()
             
             # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
             # Here, the network is learning to predict for symbol that is currrently in 'in_string[step]'
@@ -171,9 +176,10 @@ for string_idx in range(nof_strings):
     dict_htm_preds[key] = np.array(htm_preds) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_preds_dend[key] = np.array(htm_preds_dend) # numpy array of shape: (<len(in_string)>,M,N)
     dict_htm_networks[key] = np.array(htm_networks) # numpy array of shape: (<len(in_string)>+1,M,N)
-    dict_htm_multicell_MaxOverlap = np.array(htm_multicell_MaxOverlap) # numpy array of shape: 
-                                                                       # (<len(in_string)>+1,)
-        
+    dict_htm_multicell_MaxOverlap = np.array(htm_multicell_MaxOverlap, dtype=object) # numpy array of shape: 
+                                                                                     # (<len(in_string)>+1,)
+  
+print(time.time()-start)
         
 # ================================NOTES=======================================
 
