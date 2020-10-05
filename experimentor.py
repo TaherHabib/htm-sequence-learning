@@ -1,13 +1,5 @@
-"""
-This file conducts the experiment on the HTM network on learning SRG and ERG 
-tasks.
-
-"""
-
 import numpy as np
 import pandas as pd
-
-import time
 
 
 #from htm_cell import HTM_CELL
@@ -15,170 +7,172 @@ from htm_net_v2 import HTM_NET
 from rebergrammar_generator import *
 
 
-# ============================PARAM SETTING===================================
-
-# Network params
-M = 8
-N = 175
-k = 25
-
-perm_decrement = 0.05 # p-
-perm_increment = 2*perm_decrement # p+
-perm_decay = 0.1*perm_decrement # p--
-perm_boost = 0.1*perm_decrement # p++
-
-# Cell params
-dendrites_percell = 32
-connSynapses_perdend = 32 # not functional, at the moment
-nmda_threshold = 15
-permanence_threshold = 0.40
-init_permanence = 0.25
-
-#len_activity_horizon = 
-#activity_threshold = 
-
-# Task params
-do_ERG = False
-
-
-# ========================INITIALIZING========================================
-
-start = time.time()
-
-rg = Reber_Grammar(N, k)
-df_CharsToMinicols = rg.df_CharsToMinicols
-
-
-htm_network = HTM_NET(M, N, k, 
-                      n_dendrites=dendrites_percell, n_synapses=connSynapses_perdend, nmda_th=nmda_threshold, 
-                      perm_th=permanence_threshold, perm_init=init_permanence,
-                      perm_decrement=perm_decrement, perm_increment=perm_increment,
-                      perm_decay=perm_decay, perm_boost=perm_boost)
-
-
-# =================GENERATING INPUT AND PREDICTIONS STRINGS====================
-
-# Generate Input strings and Predictions
-nof_strings = 100
-
-if do_ERG:
-    rg_inputoutput = rg.get_n_erg(nof_strings)
-else:
-    rg_inputoutput = rg.get_n_srg(nof_strings)
-
-list_in_strings = [rg_inputoutput[i][0] for i in range(nof_strings)]
-list_out_strings = [rg_inputoutput[i][1] for i in range(nof_strings)]
-
-in_strings_alpha = []
-for string_oh in list_in_strings:
-    string_alpha = rg.OnehotToWord(string_oh)
-    in_strings_alpha.append(string_alpha)
-
-
-# =======================STARTING EXPERIMENT===================================
-
-# DataFrame to store results for each string in 'list_in_strings'
-df_res = pd.DataFrame(columns=('reber_string', 'htm_states', 'htm_preds', 'htm_preds_dend', 'htm_networks'))
-
-# 'htm_states' and 'htm_preds' store MxN binary state and prediction matrix of HTM network at each timestep 
-# (each letter), for each input reber string, respectively.
-
-# 'htm_preds_dend' stores MxN matrix of responsible active dendrites for each of the MxN neuron's prediction
-# in HTM network at each timestep (each letter), for each input reber string.
-
-# 'htm_networks' stores MxN matrix of HTM cells at each timestep, for each input reber string. This storage 
-# is mainly to have an access to the evolution of the synaptic permanence values of each cell in the 
-# network with time. 
-
-for string_idx in range(nof_strings):
+class Experimentor():
     
-    curr_state = np.zeros([M,N])
-    curr_pred = np.zeros([M,N])
-    curr_pred_dend = np.empty([M,N], dtype=object)
-    curr_pred_dend[:] = np.nan
+    def __init__(self, M=None, N=None, k=None, 
+                 n_dendrites=None, n_synapses=None, nmda_th=None, perm_th=None, perm_init=None, 
+                 perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None,
+                 activity_horizon=None, activity_th=None,
+                 do_ERG=False, nof_strings=1000):
+        
+        self.n_dendrites = n_dendrites
+        self.n_synapses = n_synapses 
+        self.nmda_th = nmda_th
+        self.perm_th = perm_th
+        self.perm_init = perm_init
+        self.activity_horizon = activity_horizon
+        self.activity_th = activity_th
+        
+        self.M = M 
+        self.N = N 
+        self.k = k
+        self.perm_decrement = perm_decrement
+        self.perm_increment = perm_increment
+        self.perm_decay = perm_decay
+        self.perm_boost = perm_boost
+        
+        self.do_ERG = do_ERG
+        self.nof_strings = nof_strings
     
-    htm_states=[]
-    htm_preds=[]
-    htm_preds_dend=[]
-    htm_networks=[htm_network.get_NETWORK()]
-    
-    in_string = list_in_strings[string_idx]
-    in_string_alpha = in_strings_alpha[string_idx]    
-    
-    # 'len(in_string) is actually one less than the actual length of the string,
-    # due to the final ommission of 'Z'.
-    for step in range(len(in_string)):
+        # Initializing Grammar
+        self.rg = Reber_Grammar(N, k)
+        self.df_CharsToMinicols = self.rg.df_CharsToMinicols
+
         
-        # in_string[step] is a binary 1xN vector (np.array) with 'k' 1s.
-        curr_state, curr_pred, curr_pred_dend = htm_network.get_net_state(prev_pred=curr_pred,
-                                                                          curr_input=in_string[step])
+        # Initializing Network
+        self.htm_network = HTM_NET(M, N, k, 
+                                   n_dendrites=n_dendrites, n_synapses=n_synapses, nmda_th=nmda_th, 
+                                   perm_th=perm_th, perm_init=perm_init,
+                                   perm_decrement=perm_decrement, perm_increment=perm_increment,
+                                   perm_decay=perm_decay, perm_boost=perm_boost)
         
-        htm_states.append(curr_state)
-        htm_preds.append(curr_pred)
-        htm_preds_dend.append(curr_pred_dend)
         
-        if step == 0:
-            
-            # No learning can occur for 'A' and its prediction. 
-            continue 
-        
+        # Generating Input and Prediction Strings
+        if self.do_ERG:
+            rg_inputoutput = self.rg.get_n_erg(self.nof_strings)
         else:
-            
-            # PRUNING Negative Permanence Values (set them to 0)
-            # PRUNING Positive Permanence Values (set them to 1)
-            htm_network.prune_net_Permanences()
-            
-            # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
-            # Here, the network is learning to predict for symbol that is currrently in 'in_string[step]'
-            multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
-                                                                      prev_state=htm_states[step-1],
-                                                                      prev_pred=htm_preds[step-1], 
-                                                                      prev_pred_dend=htm_preds_dend[step-1], 
-                                                                      curr_input=in_string[step])
-            htm_networks.append(htm_network.get_NETWORK())
-            
-            if multi_cell_MaxOverlap == True:
-                print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
-            
+            rg_inputoutput = self.rg.get_n_srg(self.nof_strings)
         
-        # LEARNING TO PREDICT 'Z' at the penultimate step
-        if step == len(in_string)-1:
-            
-            z_minicols = np.zeros(N)
-            z_minicols[df_CharsToMinicols['Z']] = 1 
-            
-            
-            curr_state, _, _ = htm_network.get_net_state(prev_pred=curr_pred,
-                                                         curr_input=z_minicols)
-            htm_states.append(curr_state)
-            # Since there won't be any predictions occurring at the timestep of 'Z', as input,
-            # 'curr_pred' and 'curr_pred_dend' need not be appended at all. Also, NONE of the cells
-            # in the network would be reinforcing their pre-synapses with the cells responsible
-            # for 'Z'. In other words, the output of 'dot_prod(net_state,cell_connSynapses)' in 
-            # 'get_onestep_prediction()' will always be all zero, at this step!
-            
-            multi_cell_MaxOverlap = htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
-                                                                      prev_state=htm_states[step],
-                                                                      prev_pred=htm_preds[step], 
-                                                                      prev_pred_dend=htm_preds_dend[step], 
-                                                                      curr_input=z_minicols)
-            htm_networks.append(htm_network.get_NETWORK())
-            
-            if multi_cell_MaxOverlap == True:
-                print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
-            
-            
-    df_res.loc[string_idx] = [in_string_alpha, np.array(htm_states), np.array(htm_preds), 
-                              np.array(htm_preds_dend), np.array(htm_networks)]
-    # np.array(htm_states) is numpy array of shape: (<len(in_string)>+1,M,N)
-    # np.array(htm_preds) is numpy array of shape: (<len(in_string)>,M,N)
-    # np.array(htm_preds_dend) is numpy array of shape: (<len(in_string)>,M,N)
-    # np.array(htm_networks) numpy array of shape: (<len(in_string)>+1,M,N)
+        self.list_in_strings = np.array([rg_inputoutput[i][0] for i in range(self.nof_strings)])
+        self.list_out_strings = np.array([rg_inputoutput[i][1] for i in range(self.nof_strings)])
 
+        in_strings_alpha = []
+        for string_oh in self.list_in_strings:
+            string_alpha = self.rg.OnehotToWord(string_oh)
+            in_strings_alpha.append(string_alpha)
+        
+        self.in_strings_alpha = np.array(in_strings_alpha)
+        
+        return
     
-
-print(time.time()-start)
+    
+    
+    def run_experiment(self):
         
+        # DataFrame to store results for each string in 'list_in_strings'
+        df_res = pd.DataFrame(columns=('reber_string', 'htm_states', 'htm_preds', 'htm_preds_dend', 'htm_networks'))
+        
+        # 'htm_states' and 'htm_preds' store MxN binary state and prediction matrix of HTM network at each timestep 
+        # (each letter), for each input reber string, respectively.
+        
+        # 'htm_preds_dend' stores MxN matrix of responsible active dendrites for each of the MxN neuron's prediction
+        # in HTM network at each timestep (each letter), for each input reber string.
+        
+        # 'htm_networks' stores MxN matrix of HTM cells at each timestep, for each input reber string. This storage 
+        # is mainly to have an access to the evolution of the synaptic permanence values of each cell in the 
+        # network with time. 
+        
+        for string_idx in range(self.nof_strings):
+    
+            curr_state = np.zeros([self.M,self.N])
+            curr_pred = np.zeros([self.M,self.N])
+            curr_pred_dend = np.empty([self.M,self.N], dtype=object)
+            curr_pred_dend[:] = np.nan
+            
+            htm_states=[]
+            htm_preds=[]
+            htm_preds_dend=[]
+            htm_networks=[self.htm_network.get_NETWORK()]
+            
+            in_string = self.list_in_strings[string_idx]
+            in_string_alpha = self.in_strings_alpha[string_idx]    
+            
+            # 'len(in_string) is actually one less than the actual length of the string,
+            # due to the final ommission of 'Z'.
+            for step in range(len(in_string)):
+                
+                # in_string[step] is a binary 1xN vector (np.array) with 'k' 1s.
+                curr_state, curr_pred, curr_pred_dend = self.htm_network.get_net_state(prev_pred=curr_pred,
+                                                                                       curr_input=in_string[step])
+                
+                htm_states.append(curr_state)
+                htm_preds.append(curr_pred)
+                htm_preds_dend.append(curr_pred_dend)
+                
+                if step == 0:
+                    
+                    # No learning can occur for 'A' and its prediction. 
+                    continue 
+                
+                else:
+                    
+                    # PRUNING Negative Permanence Values (set them to 0)
+                    # PRUNING Positive Permanence Values (set them to 1)
+                    self.htm_network.prune_net_Permanences()
+                    
+                    # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
+                    # Here, the network is learning to predict for symbol that is currrently in 'in_string[step]'
+                    multi_cell_MaxOverlap = self.htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
+                                                                                   prev_state=htm_states[step-1],
+                                                                                   prev_pred=htm_preds[step-1], 
+                                                                                   prev_pred_dend=htm_preds_dend[step-1], 
+                                                                                   curr_input=in_string[step])
+                    htm_networks.append(self.htm_network.get_NETWORK())
+                    
+                    if multi_cell_MaxOverlap == True:
+                        print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
+                    
+                
+                # LEARNING TO PREDICT 'Z' at the penultimate step
+                if step == len(in_string)-1:
+                    
+                    z_minicols = np.zeros(N)
+                    z_minicols[self.df_CharsToMinicols['Z']] = 1 
+                    
+                    
+                    curr_state, _, _ = self.htm_network.get_net_state(prev_pred=curr_pred,
+                                                                      curr_input=z_minicols)
+                    htm_states.append(curr_state)
+                    # Since there won't be any predictions occurring at the timestep of 'Z', as input,
+                    # 'curr_pred' and 'curr_pred_dend' need not be appended at all. Also, NONE of the cells
+                    # in the network would be reinforcing their pre-synapses with the cells responsible
+                    # for 'Z'. In other words, the output of 'dot_prod(net_state,cell_connSynapses)' in 
+                    # 'get_onestep_prediction()' will always be all zero, at this step!
+                    
+                    multi_cell_MaxOverlap =self.htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
+                                                                                  prev_state=htm_states[step],
+                                                                                  prev_pred=htm_preds[step], 
+                                                                                  prev_pred_dend=htm_preds_dend[step], 
+                                                                                  curr_input=z_minicols)
+                    htm_networks.append(self.htm_network.get_NETWORK())
+                    
+                    if multi_cell_MaxOverlap == True:
+                        print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
+                    
+                    
+            df_res.loc[string_idx] = [in_string_alpha, np.array(htm_states), np.array(htm_preds), 
+                                      np.array(htm_preds_dend), np.array(htm_networks)]
+            # np.array(htm_states) is numpy array of shape: (<len(in_string)>+1,M,N)
+            # np.array(htm_preds) is numpy array of shape: (<len(in_string)>,M,N)
+            # np.array(htm_preds_dend) is numpy array of shape: (<len(in_string)>,M,N)
+            # np.array(htm_networks) numpy array of shape: (<len(in_string)>+1,M,N)
+            
+        return df_res
+                
+        
+            
+        
+            
 # ================================NOTES=======================================
 
 #_________I_________

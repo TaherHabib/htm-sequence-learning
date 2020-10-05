@@ -32,10 +32,24 @@ def dot_prod(matrix_1=None, matrix_2=None):
     
     return np.array(result, dtype=np.float64)
 
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-
-# Calculation of Probability for a False Match of SDRs------------------------
 def false_match_prob(k,tot_neurons,connSynapses_perdend,nmda_threshold):
+    """
+    Calculator of Probability for a False Match of SDRs
+
+    Parameters
+    ----------
+    k : int; no. of winning columns per symbol.
+    tot_neurons : int; total number of neurons in the network (= MxN).
+    connSynapses_perdend : int; number of connected synapses per dendrite.
+    nmda_threshold : int; threshold for NMDA spiking.
+
+    Returns
+    -------
+    prob : float; Probability for a False Match of SDRs
+
+    """
     summ = 0
     for i in range(nmda_threshold, connSynapses_perdend+1):
         summ += ncr(connSynapses_perdend,i, exact=True)*ncr(tot_neurons-connSynapses_perdend,k-i, exact=True)
@@ -43,12 +57,3 @@ def false_match_prob(k,tot_neurons,connSynapses_perdend,nmda_threshold):
     prob = summ/ncr(tot_neurons,k, exact=True)
     
     return prob
-
-# =============================================================================
-# a = 25 # value of 'k'
-# n = 1400 # total cells in network
-# s = 32 # number of connected synapses on a dendritic segment
-# th = 15  # NMDA threshold 
-#         
-# false_match_prob(a,n,s,th)
-# =============================================================================

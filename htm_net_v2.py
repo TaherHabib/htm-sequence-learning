@@ -22,12 +22,15 @@ class HTM_NET():
                  n_dendrites=None, n_synapses=None, nmda_th=None, perm_th=None, perm_init=None, 
                  perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None):
         """
+        Initializer Function.
 
         Parameters
         ----------
         M : TYPE, optional
             DESCRIPTION. The default is None.
         N : TYPE, optional
+            DESCRIPTION. The default is None.
+        k : TYPE, optional
             DESCRIPTION. The default is None.
         n_dendrites : TYPE, optional
             DESCRIPTION. The default is None.
@@ -39,31 +42,35 @@ class HTM_NET():
             DESCRIPTION. The default is None.
         perm_init : TYPE, optional
             DESCRIPTION. The default is None.
-        k : TYPE, optional
+        perm_decrement : TYPE, optional
             DESCRIPTION. The default is None.
-        
+        perm_increment : TYPE, optional
+            DESCRIPTION. The default is None.
+        perm_decay : TYPE, optional
+            DESCRIPTION. The default is None.
+        perm_boost : TYPE, optional
+            DESCRIPTION. The default is None.
+
         Returns
         -------
         None.
 
         """
-        
         self.M = M # 8
         self.N = N # 175 = k*M
         self.k = k # 25
         
-        self.net_arch = np.empty([self.M, self.N], dtype=HTM_CELL)
-        
-        # Initializing every cell in the network, i.e. setting up the dendrites for each cell.
-        for i in range(self.M):
-            for j in range(self.N):
-                cell = HTM_CELL(M,N,n_dendrites,n_synapses,nmda_th,perm_th,perm_init)
-                self.net_arch[i,j] = cell
-                
         self.perm_decrement = perm_decrement
         self.perm_increment = perm_increment
         self.perm_decay = perm_decay
         self.perm_boost = perm_boost
+        
+        
+        # Initializing every cell in the network, i.e. setting up the dendrites for each cell.
+        self.net_arch = np.empty([self.M, self.N], dtype=HTM_CELL)        
+        for i in range(self.M):
+            for j in range(self.N):
+                self.net_arch[i,j] = HTM_CELL(M,N,n_dendrites,n_synapses,nmda_th,perm_th,perm_init)        
         
         return
     
