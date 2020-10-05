@@ -37,7 +37,9 @@ class Experimentor():
         # Initializing Grammar
         self.rg = Reber_Grammar(N, k)
         self.df_CharsToMinicols = self.rg.df_CharsToMinicols
-
+        self.z_minicols = np.zeros(self.N)
+        self.z_minicols[self.df_CharsToMinicols['Z']] = 1 
+                    
         
         # Initializing Network
         self.htm_network = HTM_NET(M, N, k, 
@@ -136,12 +138,8 @@ class Experimentor():
                 # LEARNING TO PREDICT 'Z' at the penultimate step
                 if step == len(in_string)-1:
                     
-                    z_minicols = np.zeros(self.N)
-                    z_minicols[self.df_CharsToMinicols['Z']] = 1 
-                    
-                    
                     curr_state, _, _ = self.htm_network.get_net_state(prev_pred=curr_pred,
-                                                                      curr_input=z_minicols)
+                                                                      curr_input=self.z_minicols)
                     htm_states.append(curr_state)
                     # Since there won't be any predictions occurring at the timestep of 'Z', as input,
                     # 'curr_pred' and 'curr_pred_dend' need not be appended at all. Also, NONE of the cells
@@ -153,7 +151,7 @@ class Experimentor():
                                                                                   prev_state=htm_states[step],
                                                                                   prev_pred=htm_preds[step], 
                                                                                   prev_pred_dend=htm_preds_dend[step], 
-                                                                                  curr_input=z_minicols)
+                                                                                  curr_input=self.z_minicols)
                     htm_networks.append(self.htm_network.get_NETWORK())
                     
                     if multi_cell_MaxOverlap == True:
@@ -167,7 +165,16 @@ class Experimentor():
             # np.array(htm_preds_dend) is numpy array of shape: (<len(in_string)>,M,N)
             # np.array(htm_networks) numpy array of shape: (<len(in_string)>+1,M,N)
             
-        return df_res
+        
+        df_res.set_index('reber_string', inplace=True)
+            
+        dict_results = {
+            'results': df_res,
+            'chars_to_minicols': self.df_CharsToMinicols,
+            'in_strings_onehot': self.list_in_strings,
+            'out_strings_onehot': self.list_out_strings}
+        
+        return dict_results
                 
         
             
