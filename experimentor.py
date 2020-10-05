@@ -53,15 +53,15 @@ class Experimentor():
         else:
             rg_inputoutput = self.rg.get_n_srg(self.nof_strings)
         
-        self.list_in_strings = np.array([rg_inputoutput[i][0] for i in range(self.nof_strings)])
-        self.list_out_strings = np.array([rg_inputoutput[i][1] for i in range(self.nof_strings)])
+        self.list_in_strings = np.array([rg_inputoutput[i][0] for i in range(self.nof_strings)], dtype=object)
+        self.list_out_strings = np.array([rg_inputoutput[i][1] for i in range(self.nof_strings)], dtype=object)
 
         in_strings_alpha = []
         for string_oh in self.list_in_strings:
             string_alpha = self.rg.OnehotToWord(string_oh)
             in_strings_alpha.append(string_alpha)
         
-        self.in_strings_alpha = np.array(in_strings_alpha)
+        self.in_strings_alpha = np.array(in_strings_alpha, dtype=object)
         
         return
     
@@ -136,7 +136,7 @@ class Experimentor():
                 # LEARNING TO PREDICT 'Z' at the penultimate step
                 if step == len(in_string)-1:
                     
-                    z_minicols = np.zeros(N)
+                    z_minicols = np.zeros(self.N)
                     z_minicols[self.df_CharsToMinicols['Z']] = 1 
                     
                     
