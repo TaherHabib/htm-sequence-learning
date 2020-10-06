@@ -239,21 +239,3 @@ class Experimentor():
 
 # On Deciding on the activity horizon and threshold for boosting cell activity
 # 
-
-
-#----------------------------------------------------------------------
-        # THIS IS WHERE PERFORMANCE MEASUREMENT WILL OCCUR !!!
-        #
-        # Take 'curr_pred' (a matrix of shape MxN) from the line above and 
-        # compare it with 'list_out_strings[string_idx][step]' (also a matrix 
-        # of shape MxN). 
-        # 
-        # NO WAIT!
-        # 
-        # I am anyway collecting the network predictions at each timestep in 
-        # 'htm_preds'. I can then later on use this to measure the performance
-        # of the network, after the network has run over a few thousand
-        # strings.
-        #----------------------------------------------------------------------
-        
-        
