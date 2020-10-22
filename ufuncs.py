@@ -1,3 +1,7 @@
+import bz2
+import pickle
+import _pickle as cPickle
+
 import numpy as np
 from scipy.special import comb as ncr
 
@@ -57,3 +61,95 @@ def false_match_prob(k,tot_neurons,connSynapses_perdend,nmda_threshold):
     prob = summ/ncr(tot_neurons,k, exact=True)
     
     return prob
+
+
+
+def full_pickle(filename, data):
+    '''
+    Saves the 'data' with the 'filename' as pickle    
+
+    Parameters
+    ----------
+    filename : TYPE
+        DESCRIPTION.
+    data : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
+    
+    f = open(filename + '.pickle', 'wb')
+    pickle.dump(data, f)
+    f.close()
+    
+    
+
+def unpickle(filename):
+    '''
+    Loads and returns a pickled object.
+
+    Parameters
+    ----------
+    filename : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    data : TYPE
+        DESCRIPTION.
+
+    '''
+    
+    f = open(filename, 'rb')
+    data = pickle.load(f)
+    f.close()
+    
+    return data
+
+
+
+def compressed_pickle(filename, data):
+    '''
+    Pickle a file and then compress it into BZ2 file. 
+
+    Parameters
+    ----------
+    filename : TYPE
+        DESCRIPTION.
+    data : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
+    
+    with bz2.BZ2File(filename + '.pbz2', 'w') as f: 
+        cPickle.dump(data, f)
+        
+
+
+def decompress_pickle(filename):
+    '''
+    Load any compressed pickle file.
+
+    Parameters
+    ----------
+    filename : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    data : TYPE
+        DESCRIPTION.
+
+    '''
+    
+    data = bz2.BZ2File(filename, 'rb')
+    data = cPickle.load(data)
+    
+    return data
