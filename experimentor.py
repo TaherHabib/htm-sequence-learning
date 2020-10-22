@@ -37,7 +37,7 @@ class Experimentor():
         # Initializing Grammar
         self.rg = Reber_Grammar(N, k)
         self.df_CharsToMinicols = self.rg.df_CharsToMinicols
-        self.z_minicols = np.zeros(self.N)
+        self.z_minicols = np.zeros(self.N, dtype=np.int8)
         self.z_minicols[self.df_CharsToMinicols['Z']] = 1 
                     
         
@@ -72,7 +72,7 @@ class Experimentor():
     def run_experiment(self):
         
         # DataFrame to store results for each string in 'list_in_strings'
-        df_res = pd.DataFrame(columns=('reber_string', 'htm_states', 'htm_preds', 'htm_preds_dend', 'htm_networks'))
+        df_res = pd.DataFrame(columns=('reber_string', 'htm_states', 'htm_preds', 'htm_preds_dend', 'htm_network'))
         
         # 'htm_states' and 'htm_preds' store MxN binary state and prediction matrix of HTM network at each timestep 
         # (each letter), for each input reber string, respectively.
@@ -86,15 +86,13 @@ class Experimentor():
         
         for string_idx in range(self.nof_strings):
     
-            curr_state = np.zeros([self.M,self.N])
-            curr_pred = np.zeros([self.M,self.N])
-            curr_pred_dend = np.empty([self.M,self.N], dtype=object)
-            curr_pred_dend[:] = np.nan
+            curr_state = np.zeros([self.M,self.N], dtype=np.int8)
+            curr_pred = np.zeros([self.M,self.N], dtype=np.int8)
             
             htm_states=[]
             htm_preds=[]
             htm_preds_dend=[]
-            htm_networks=[self.htm_network.get_NETWORK()]
+            htm_net_ = self.htm_network.get_NETWORK(char_minicols='all')
             
             in_string = self.list_in_strings[string_idx]
             in_string_alpha = self.in_strings_alpha[string_idx]    
@@ -129,7 +127,7 @@ class Experimentor():
                                                                                    prev_pred=htm_preds[step-1], 
                                                                                    prev_pred_dend=htm_preds_dend[step-1], 
                                                                                    curr_input=in_string[step])
-                    htm_networks.append(self.htm_network.get_NETWORK())
+                    #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=in_string[step]))
                     
                     if multi_cell_MaxOverlap == True:
                         print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
@@ -152,21 +150,23 @@ class Experimentor():
                                                                                   prev_pred=htm_preds[step], 
                                                                                   prev_pred_dend=htm_preds_dend[step], 
                                                                                   curr_input=self.z_minicols)
-                    htm_networks.append(self.htm_network.get_NETWORK())
+                    #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=self.z_minicols))
                     
                     if multi_cell_MaxOverlap == True:
                         print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
                     
-                    
-            df_res.loc[string_idx] = [in_string_alpha, np.array(htm_states), np.array(htm_preds), 
-                                      np.array(htm_preds_dend), np.array(htm_networks)]
+            
+            df_res.loc[string_idx] = [in_string_alpha, 
+                                      np.array(htm_states), 
+                                      np.array(htm_preds), 
+                                      np.array(htm_preds_dend), 
+                                      htm_net_]
+            
             # np.array(htm_states) is numpy array of shape: (<len(in_string)>+1,M,N)
             # np.array(htm_preds) is numpy array of shape: (<len(in_string)>,M,N)
             # np.array(htm_preds_dend) is numpy array of shape: (<len(in_string)>,M,N)
             # np.array(htm_networks) numpy array of shape: (<len(in_string)>+1,M,N)
             
-        
-        df_res.set_index('reber_string', inplace=True)
             
         dict_results = {
             'results': df_res,
@@ -175,7 +175,7 @@ class Experimentor():
             'out_strings_onehot': self.list_out_strings}
         
         return dict_results
-                
+    
         
             
         

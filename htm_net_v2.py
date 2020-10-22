@@ -96,7 +96,7 @@ class HTM_NET():
         # this assumption may be broken (?). CHECK
         
         # MxN binary numpy array to store the predictive states of all cells.
-        pred = np.zeros([self.M, self.N])
+        pred = np.zeros([self.M, self.N], dtype=np.int8)
         
         # MxN numpy array to store the index of the dendrites that led to the
         # predictive states of the cell. For unpredicted cells, the values are NaN.
@@ -114,7 +114,7 @@ class HTM_NET():
                 
                 # if any denrite of the cell is active, then the cell becomes predictive.
                 if any(cell_dendActivity):
-                    pred[i,j] = 1.0
+                    pred[i,j] = 1
                     pred_dend[i,j] = np.where(cell_dendActivity)[0] # RHS would be 1D numpy array of 
                                                                     # max. length <cell.n_dendrites>
                     
@@ -165,7 +165,7 @@ class HTM_NET():
         # fully activated.
         for m in range(self.M):
             curr_state.append(curr_input)
-        curr_state = np.array(curr_state) # MxN binary matrix
+        curr_state = np.array(curr_state, dtype=np.int8) # MxN binary matrix
         
         # 'curr_state*prev_pred' gives MxN binary matrix of only those cells that
         # are predicted AND present in the current input. Adding 'net_state' to 
@@ -346,7 +346,7 @@ class HTM_NET():
         return None
     
     
-    def get_NETWORK(self):
+    def get_NETWORK(self, char_minicols='all'):
         """
         Returns the network architecture – MxN matrix of HTM_CELLs
 
@@ -355,7 +355,12 @@ class HTM_NET():
         MxN matrix of HTM_CELLs
         
         """
-        return self.net_arch
+        
+        if char_minicols == 'all':
+            return  self.net_arch
+        
+        else:
+            return self.net_arch[:, np.where(char_minicols)[0]]
     
     
     def prune_net_Permanences(self):
@@ -371,8 +376,8 @@ class HTM_NET():
         for i in range(self.M):
             for j in range(self.N):
                 cell = self.net_arch[i,j]
-                cell.dendrites[cell.dendrites<0] = 0
-                cell.dendrites[cell.dendrites>1] = 1
+                cell.dendrites[cell.dendrites<0] = 0.0
+                cell.dendrites[cell.dendrites>1] = 1.0
                 
         return
     
