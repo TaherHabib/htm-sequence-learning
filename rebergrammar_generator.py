@@ -113,16 +113,16 @@ class Reber_Grammar():
         
         for i_ch,o_ch in zip(inchars, outchars): 
             
-            inpt = np.zeros(self.N)
+            inpt = np.zeros(self.N, dtype=np.int8)
             inpt[self.df_CharsToMinicols[i_ch]] = 1     
             inseq_oh.append(inpt)
             
-            outpt = np.zeros(self.N)
+            outpt = np.zeros(self.N, dtype=np.int8)
             for o in o_ch:
                 outpt[self.df_CharsToMinicols[o]] = 1
             outseq_oh.append(outpt)
         
-        return np.array(inseq_oh), np.array(outseq_oh)
+        return np.array(inseq_oh, dtype=np.int8), np.array(outseq_oh, dtype=np.int8)
     
     
     def get_n_srg(self, n, minLength=5):
@@ -263,7 +263,7 @@ class Reber_Grammar():
         
         # Selecting one of 'T' or 'P' for embedding and computing its one-hot encoding
         emb_char = emb_chars[np.random.randint(0, len(emb_chars))]
-        emb_char_oh = np.zeros(self.N)
+        emb_char_oh = np.zeros(self.N, dtype=np.int8)
         emb_char_oh[self.df_CharsToMinicols[emb_char]] = 1     
     
         # Entering the embedded char's one-hot encoding at the second position    
@@ -277,7 +277,7 @@ class Reber_Grammar():
         # Entering the prediction of embedded char at the second last position
         emb_out_oh.insert(len(emb_out_oh)-1, emb_char_oh)
     
-        return np.array(emb_in_oh), np.array(emb_out_oh)
+        return np.array(emb_in_oh, dtype=np.int8), np.array(emb_out_oh, dtype=np.int8)
     
     
     def get_n_erg(self, n, minLength=5):
