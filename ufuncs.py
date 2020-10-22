@@ -38,7 +38,7 @@ def dot_prod(matrix_1=None, matrix_2=None):
 
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-def false_match_prob(k,tot_neurons,connSynapses_perdend,nmda_threshold):
+def false_match_prob(k=None,tot_neurons=None,connSynapses_perdend=None,nmda_threshold=None):
     """
     Calculator of Probability for a False Match of SDRs
 
@@ -64,7 +64,7 @@ def false_match_prob(k,tot_neurons,connSynapses_perdend,nmda_threshold):
 
 
 
-def full_pickle(filename, data):
+def full_pickle(filename=None, data=None):
     '''
     Saves the 'data' with the 'filename' as pickle    
 
@@ -81,13 +81,13 @@ def full_pickle(filename, data):
 
     '''
     
-    f = open(filename + '.pickle', 'wb')
+    f = open(filename+'.pickle', 'wb')
     pickle.dump(data, f)
     f.close()
     
     
 
-def unpickle(filename):
+def unpickle(filename=None):
     '''
     Loads and returns a pickled object.
 
@@ -103,7 +103,7 @@ def unpickle(filename):
 
     '''
     
-    f = open(filename, 'rb')
+    f = open(filename+'.pickle', 'rb')
     data = pickle.load(f)
     f.close()
     
@@ -111,7 +111,7 @@ def unpickle(filename):
 
 
 
-def compressed_pickle(filename, data):
+def compress_pickle(filename=None, data=None):
     '''
     Pickle a file and then compress it into BZ2 file. 
 
@@ -128,7 +128,7 @@ def compressed_pickle(filename, data):
 
     '''
     
-    with bz2.BZ2File(filename + '.pbz2', 'w') as f: 
+    with bz2.BZ2File(filename+'.pbz2', 'wb') as f: 
         cPickle.dump(data, f)
         
 
@@ -149,7 +149,12 @@ def decompress_pickle(filename):
 
     '''
     
-    data = bz2.BZ2File(filename, 'rb')
+    data = bz2.BZ2File(filename+'.pbz2', 'rb')
     data = cPickle.load(data)
     
     return data
+
+
+#_______________________________NOTES_________________________________________
+
+# 1. http://www.linfo.org/bzip2.html for details on bzip2 file compression
