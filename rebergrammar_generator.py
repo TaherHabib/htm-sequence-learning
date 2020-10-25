@@ -1,3 +1,8 @@
+'''
+The following code allows us to generate random valid grammar strings:
+(Source: https://www.deep-teaching.org/notebooks/sequence-learning/exercise-pytorch-char-rnn-reber-grammar)
+'''
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -43,6 +48,7 @@ class Reber_Grammar():
         self.df_CharsToMinicols = pd.DataFrame() # DataFrame with cols: 'A', 'T', 'P', etc. each with 'k'
                                                  # minicolumn indices corresponding to that character.
         minicolumns = np.arange(self.N)
+        random.seed(1)
         random.shuffle(minicolumns)
         
         for i, sym in enumerate(self.chars):
