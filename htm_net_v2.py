@@ -210,13 +210,8 @@ class HTM_NET():
         
         # 'all_predicted_cols' will be np.array of max. possible length <self.N>
         all_predicted_cols = np.unique(np.where(prev_pred)[1]) 
-        
-        
-        unpredicted_cols = []
-                    
-        for j in winning_cols:
-            if curr_state[:,j].sum() == self.M:
-                unpredicted_cols.append(j)
+                
+        unpredicted_cols = [col for col in winning_cols if curr_state[:, col].sum() == self.M]
         
         corr_predicted_cols = [col for col in winning_cols if col not in unpredicted_cols]
         
@@ -304,8 +299,7 @@ class HTM_NET():
                 
                 # for indices of all dendrites that led to cell's prediction.
                 for d in prev_pred_dend[i,j]:
-                    self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d] 
-                    + self.perm_increment*prev_state 
+                    self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d] + self.perm_increment*prev_state 
                     - self.perm_decrement*self.net_arch[i,j].dendrites[d]
             
         
@@ -326,8 +320,7 @@ class HTM_NET():
                 
                 # for indices of all dendrites that led to cell's wrong prediction.
                 for d in prev_pred_dend[i,j]:
-                    self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d]
-                    - self.perm_decay*prev_state
+                    self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d] - self.perm_decay*prev_state
                     
         
         #_______________________BOOSTING_______________________________________
