@@ -144,6 +144,8 @@ class Experimentor():
                     # in the network would be reinforcing their pre-synapses with the cells responsible
                     # for 'Z'. In other words, the output of 'dot_prod(net_state,cell_connSynapses)' in 
                     # 'get_onestep_prediction()' will always be all zero, at this step!
+                
+                    self.htm_network.prune_net_Permanences()
                     
                     multi_cell_MaxOverlap =self.htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
                                                                                   prev_state=htm_states[step],
@@ -165,7 +167,6 @@ class Experimentor():
             # np.array(htm_states) is numpy array of shape: (<len(in_string)>+1,M,N)
             # np.array(htm_preds) is numpy array of shape: (<len(in_string)>,M,N)
             # np.array(htm_preds_dend) is numpy array of shape: (<len(in_string)>,M,N)
-            # np.array(htm_networks) numpy array of shape: (<len(in_string)>+1,M,N)
             
             
         dict_results = {

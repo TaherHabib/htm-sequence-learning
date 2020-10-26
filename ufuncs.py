@@ -133,7 +133,7 @@ def compress_pickle(filename=None, data=None):
         
 
 
-def decompress_pickle(filename):
+def decompress_pickle(filename=None):
     '''
     Load any compressed pickle file.
 
