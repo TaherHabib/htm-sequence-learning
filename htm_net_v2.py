@@ -19,7 +19,8 @@ from ufuncs import dot_prod
 class HTM_NET():
 
     def __init__(self, M=None, N=None, k=None, 
-                 n_dendrites=None, n_synapses=None, nmda_th=None, perm_th=None, perm_init=None, 
+                 n_dendrites=None, n_synapses=None, 
+                 nmda_th=None, perm_th=None, perm_init=None, perm_init_sd=None,
                  perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None):
         """
         Initializer Function.
@@ -70,8 +71,8 @@ class HTM_NET():
         self.net_arch = np.empty([self.M, self.N], dtype=HTM_CELL)        
         for i in range(self.M):
             for j in range(self.N):
-                self.net_arch[i,j] = HTM_CELL(M,N,n_dendrites,n_synapses,nmda_th,perm_th,perm_init)        
-        
+                self.net_arch[i,j] = HTM_CELL(i, j, M, N, n_dendrites, n_synapses,
+                                              nmda_th, perm_th, perm_init, perm_init_sd)        
         return
     
     
@@ -105,12 +106,11 @@ class HTM_NET():
         
         for j in range(self.N):
             for i in range(self.M):
-                cell = self.net_arch[i,j]
-                cell_connSynapses = cell.get_cell_connSynapses() # is a boolean list of 32 MxN matrices, 
-                                                                 # shape: (<cell.n_dendrites>,M,N)
+                cell_connSynapses = self.net_arch[i,j].get_cell_connSynapses() # is a boolean list of 32 MxN matrices, 
+                                                                               # shape: (<cell.n_dendrites>,M,N)
                 
                 # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
-                cell_dendActivity = dot_prod(net_state,cell_connSynapses)>cell.nmda_th
+                cell_dendActivity = dot_prod(net_state,cell_connSynapses)>self.net_arch[i,j].nmda_th
                 
                 # if any denrite of the cell is active, then the cell becomes predictive.
                 if any(cell_dendActivity):
@@ -230,11 +230,9 @@ class HTM_NET():
             overlap = [] # 'overlap' will eventually be a list of np.arrays.
                          # shape: (self.M, <cell.n_dendrites>)
             
-            for i in range(self.M):
-                cell_synapses = self.net_arch[i,j].dendrites
-                
+            for i in range(self.M):                
                 # 'cell_dendFloat' will be a float64 array of shape (<cell.n_dendrites>,)
-                cell_dendFloat = dot_prod(prev_state,cell_synapses) 
+                cell_dendFloat = dot_prod(prev_state, self.net_arch[i,j].dendrites) 
                 overlap.append(cell_dendFloat)
             
             # NOTE: Ideally, the maximum value in overlap should occur at a unique position.
@@ -256,16 +254,11 @@ class HTM_NET():
                 # simply re-initialize the other cells/dendrites.
                 MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
                 
-                # Decrement all synapses by p-
-                MaxOverlap_cell_dend = MaxOverlap_cell_dend - self.perm_decrement*MaxOverlap_cell_dend
+                # Decrement all synapses by p- and increment active synapses by p+
+                self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend + self.perm_increment*prev_state 
+                - self.perm_decrement*MaxOverlap_cell_dend
                 
-                # Increment active synapses by p+
-                MaxOverlap_cell_dend = MaxOverlap_cell_dend + self.perm_increment*prev_state
-                
-                # Re-assigning back again to the original dendrite of the cell
-                self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend
-                
-                # Re-initializing other cells with Max. Overlap
+                # Re-initializing other cells within Max. Overlap
                 for d in range(1,len(max_overlap_cell)):
                     self.net_arch[max_overlap_cell[d],j].dendrites[max_overlap_dendrite[d]] = \
                         np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])                 
@@ -275,11 +268,8 @@ class HTM_NET():
                 MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
                 
                 # Increment active synapses by p+ and Decrement all synapses by p-
-                MaxOverlap_cell_dend = MaxOverlap_cell_dend + self.perm_increment*prev_state 
+                self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend + self.perm_increment*prev_state 
                 - self.perm_decrement*MaxOverlap_cell_dend
-                
-                # Re-assigning back again to the original dendrite of the cell
-                self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend
                 
             
         #_______________________CASE II________________________________________
@@ -290,11 +280,10 @@ class HTM_NET():
         
         for j in corr_predicted_cols:
             
-            # extract the i-indices of all the predicted cells in the column
+            # extract the i-indices of all the CORRECTLY predicted cells in the column
             cells_i = np.where(prev_pred[:,j])[0]
             
-            # Reinforce the active dendrites for all of the predicted cells in
-            # the minicolumn.
+            # Reinforce the active dendrites for all of the predicted cells in the minicolumn.
             for i in cells_i:
                 
                 # for indices of all dendrites that led to cell's prediction.
@@ -314,8 +303,7 @@ class HTM_NET():
             # extract the i-indices of all the WRONGLY predicted cells in the column
             cells_i = np.where(prev_pred[:,j])[0]
             
-            # Punish the active dendrites for all of the wrongly predicted cells 
-            # in the minicolumn.
+            # Punish the active dendrites for all of the wrongly predicted cells in the minicolumn.
             for i in cells_i:
                 
                 # for indices of all dendrites that led to cell's wrong prediction.

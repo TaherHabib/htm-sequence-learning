@@ -8,8 +8,8 @@ class HTM_CELL():
     
     """
     
-    def __init__(self, M=None, N=None, n_dendrites=None, n_synapses=None, 
-                 nmda_th=None, perm_th=None, perm_init=None):
+    def __init__(self, i=None, j=None, M=None, N=None, n_dendrites=None, n_synapses=None, 
+                 nmda_th=None, perm_th=None, perm_init=None, perm_init_sd=None):
         
         """
         
@@ -24,13 +24,19 @@ class HTM_CELL():
         self.nmda_th = nmda_th
         self.perm_th = perm_th
         self.perm_init = perm_init
+        self.perm_init_sd = perm_init_sd
         
         # list containing the matrices of potential synapses (permanence values) for each dendrite
-        # of the HTM cell; list of 32 MxN matrices, shape: (32,M,N)
-        self.dendrites = np.array([np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])
-                          for i in range(self.n_dendrites)], dtype=np.float64) 
+        # of the HTM cell; numpy array of 32 MxN matrices, shape: (32,M,N)
+        self.dendrites = np.array([np.random.normal(loc=self.perm_init, scale=self.perm_init_sd, size=[self.M, self.N])
+                          for i in range(self.n_dendrites)], dtype=np.float64)
+        
+        # Preventing all autapses
+        for d in range(self.n_dendrites):
+            self.dendrites[d,i,j] = 0.0
         
         self.dutycycle = []
+        
         
         return
     

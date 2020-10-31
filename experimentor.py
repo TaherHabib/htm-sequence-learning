@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import copy
 
 
 #from htm_cell import HTM_CELL
@@ -10,7 +11,8 @@ from rebergrammar_generator import *
 class Experimentor():
     
     def __init__(self, M=None, N=None, k=None, 
-                 n_dendrites=None, n_synapses=None, nmda_th=None, perm_th=None, perm_init=None, 
+                 n_dendrites=None, n_synapses=None, 
+                 nmda_th=None, perm_th=None, perm_init=None, perm_init_sd=None,
                  perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None,
                  activity_horizon=None, activity_th=None,
                  do_ERG=False, nof_strings=1000):
@@ -44,7 +46,7 @@ class Experimentor():
         # Initializing Network
         self.htm_network = HTM_NET(M, N, k, 
                                    n_dendrites=n_dendrites, n_synapses=n_synapses, nmda_th=nmda_th, 
-                                   perm_th=perm_th, perm_init=perm_init,
+                                   perm_th=perm_th, perm_init=perm_init, perm_init_sd=perm_init_sd,
                                    perm_decrement=perm_decrement, perm_increment=perm_increment,
                                    perm_decay=perm_decay, perm_boost=perm_boost)
         
@@ -92,7 +94,7 @@ class Experimentor():
             htm_states=[]
             htm_preds=[]
             htm_preds_dend=[]
-            htm_net_ = self.htm_network.get_NETWORK(char_minicols='all')
+            htm_net_ = copy.deepcopy(self.htm_network.get_NETWORK(char_minicols='all'))
             
             in_string = self.list_in_strings[string_idx]
             in_string_alpha = self.in_strings_alpha[string_idx]    
