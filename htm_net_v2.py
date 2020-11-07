@@ -94,7 +94,8 @@ class HTM_NET():
         
         # ASSUMPTION: There will never be two dendrites on the same cell that
         # get activated to the same activity pattern in the population. BUT 
-        # this assumption may be broken (?). CHECK
+        # this assumption may be broken (?). CHECK. (ANS: So far there has been 
+        # no evidence that this assumption may break.)
         
         # MxN binary numpy array to store the predictive states of all cells.
         pred = np.zeros([self.M, self.N], dtype=np.int8)
