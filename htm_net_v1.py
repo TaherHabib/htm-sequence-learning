@@ -1,9 +1,9 @@
 """
-This version 2 of 'htm_net.py' differs from version 1 in the following manner:
+This version 0 (deleted) of 'htm_net.py' differs from version 1 in the following manner:
 
 In the case of multiple cells predicted in a single minicolumn, it reinforces all
-of those predicted cells, instead of choosing only one of them – the latter is 
-planned for execution in version 1.
+of those predicted cells, instead of choosing only one of them – the latter were 
+planned for execution in version 0.
 
 """
 
