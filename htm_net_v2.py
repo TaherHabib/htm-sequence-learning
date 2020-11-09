@@ -1,11 +1,3 @@
-"""
-This version 2 of 'htm_net.py' differs from version 1 in the following manner:
-
-In the case of multiple cells predicted in a single minicolumn, it reinforces all
-of those predicted cells, instead of choosing only one of them – the latter is 
-planned for execution in version 1.
-
-"""
 
 import numpy as np
 import pandas as pd
@@ -107,18 +99,22 @@ class HTM_NET():
         
         for j in range(self.N):
             for i in range(self.M):
-                cell_connSynapses = self.net_arch[i,j].get_cell_connSynapses() # is a boolean list of 32 MxN matrices, 
-                                                                               # shape: (<cell.n_dendrites>,M,N)
-                
-                # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
-                cell_dendActivity = dot_prod(net_state,cell_connSynapses)>self.net_arch[i,j].nmda_th
-                
-                # if any denrite of the cell is active, then the cell becomes predictive.
-                if any(cell_dendActivity):
-                    pred[i,j] = 1
-                    pred_dend[i,j] = np.where(cell_dendActivity)[0] # RHS would be 1D numpy array of 
-                                                                    # max. length <cell.n_dendrites>
+                cell_connSynapses = self.net_arch[i,j].get_cell_connSynapses() # is a boolean list of max. <cell.n_dendrites>
+                                                                               # MxN matrices, shape: (<cell.n_dendrites>,M,N)
+                if cell_connSynapses is not None:
                     
+                    if np.shape(cell_connSynapses) == (self.M, self.N):
+                        cell_connSynapses = np.reshape(cell_connSynapses, (1, self.M, self.N))
+                    
+                    # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
+                    cell_dendActivity = dot_prod(net_state,cell_connSynapses)>self.net_arch[i,j].nmda_th
+                
+                    # if any denrite of the cell is active, then the cell becomes predictive.
+                    if any(cell_dendActivity):
+                        pred[i,j] = 1
+                        pred_dend[i,j] = np.where(cell_dendActivity)[0] # RHS would be 1D numpy array of 
+                                                                        # max. length <cell.n_dendrites>                    
+        
         return pred, pred_dend
     
     
@@ -197,9 +193,9 @@ class HTM_NET():
     
     
     
-    def do_net_synaPermUpdate(self, curr_state=None, prev_state=None, 
-                              prev_pred=None, prev_pred_dend=None, 
-                              curr_input=None):
+    def do_net_PermanenceUpdate(self, curr_state=None, prev_state=None, 
+                                prev_pred=None, prev_pred_dend=None, 
+                                curr_input=None):
         
         #----------------------------------------------------------------------
         # From winning columns, collect all columns that are unpredicted 
