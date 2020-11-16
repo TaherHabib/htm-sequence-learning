@@ -15,8 +15,7 @@ def dot_prod(matrix_1=None, matrix_2=None):
     Parameters
     ----------
     matrix_1 : float array of shape (M,N)
-    matrix_2 : float array of shape (<nof_matrices>,M,N). If only one MxN matrix 
-    is passed, it should be of shape (1,M,N).
+    matrix_2 : float array of shape (<nof_matrices>,M,N).
 
     Returns
     -------
@@ -28,6 +27,16 @@ def dot_prod(matrix_1=None, matrix_2=None):
 
     """
     
+    M, N = np.shape(matrix_1) 
+    
+    # when only 1 array of MxN is passed in 'matrix_2', reshape it to (1,M,N)
+    # so that the function output is appropriate.
+    if np.shape(matrix_2) == (M, N):
+        matrix_2 = np.reshape(matrix_2, (1, M, N))
+        
+    if len(matrix_2) == 0: # when there are no dendrites on the cell
+        return -100
+                    
     mult_res = np.multiply(matrix_1, matrix_2, dtype=np.float64)
     
     result = []

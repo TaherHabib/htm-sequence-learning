@@ -187,6 +187,12 @@ class Reber_Grammar():
         
         return reberString
     
+    def CharToOnehot(self, char):
+        
+        charOnehot = np.zeros(self.N, dtype=np.int8)
+        charOnehot[self.df_CharsToMinicols[char]] = 1
+        
+        return charOnehot
     
     def in_grammar(self, word):
         """
@@ -217,7 +223,7 @@ class Reber_Grammar():
         return True  
 
     
-    def hist_len_rg(self, rg_exs):
+    def histogram_lenReberStrings(self, rg_exs):
         """
         Plots histogram of the lengths of the generated reber grammar strings.
 

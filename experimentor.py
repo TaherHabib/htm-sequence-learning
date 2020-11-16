@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import copy
-
+import random
 
 #from htm_cell import HTM_CELL
 from htm_net_v2 import HTM_NET
@@ -39,9 +39,16 @@ class Experimentor():
         # Initializing Grammar
         self.rg = Reber_Grammar(N, k)
         self.df_CharsToMinicols = self.rg.df_CharsToMinicols
-        self.z_minicols = np.zeros(self.N, dtype=np.int8)
-        self.z_minicols[self.df_CharsToMinicols['Z']] = 1 
-                    
+        
+        # Onehot for 'Z'
+        self.z_onehot = rg.CharToOnehot('Z')
+        
+        # Winner Cells for 'A'
+        self.A_winner_cells = np.zeros([self.M, self.N], dtype=np.int8)
+        random.seed(1)
+        A_winnercells_i = random.choices(np.arange(self.M), k=self.k)
+        for i in range(self.k):
+            A_winner_cells[A_winnercells_i[i], self.df_CharsToMinicols['A'][i]] = 1            
         
         # Initializing Network
         self.htm_network = HTM_NET(M, N, k, 
@@ -74,7 +81,8 @@ class Experimentor():
     def run_experiment(self):
         
         # DataFrame to store results for each string in 'list_in_strings'
-        df_res = pd.DataFrame(columns=('reber_string', 'htm_states', 'htm_preds', 'htm_preds_dend', 'htm_network'))
+        df_res = pd.DataFrame(columns=('reber_string', 'htm_states', 'htm_preds', 'htm_preds_dend', 
+                                       'htm_winner_cells', 'htm_network'))
         
         # 'htm_states' and 'htm_preds' store MxN binary state and prediction matrix of HTM network at each timestep 
         # (each letter), for each input reber string, respectively.
@@ -87,17 +95,16 @@ class Experimentor():
         # network with time. 
         
         for string_idx in range(self.nof_strings):
-    
-            curr_state = np.zeros([self.M,self.N], dtype=np.int8)
-            curr_pred = np.zeros([self.M,self.N], dtype=np.int8)
             
             htm_states=[]
             htm_preds=[]
             htm_preds_dend=[]
+            htm_winner_cells=[]
             htm_net_ = copy.deepcopy(self.htm_network.get_NETWORK(char_minicols='all'))
             
             in_string = self.list_in_strings[string_idx]
             in_string_alpha = self.in_strings_alpha[string_idx]    
+            curr_pred = np.zeros([self.M,self.N], dtype=np.int8)
             
             # 'len(in_string) is actually one less than the actual length of the string,
             # due to the final ommission of 'Z'.
@@ -112,26 +119,29 @@ class Experimentor():
                 htm_preds_dend.append(curr_pred_dend)
                 
                 if step == 0:
+                
+                    winner_cells = self.A_winner_cells
+                    htm_winner_cells.append(winner_cells)
                     
                     # No learning can occur for 'A' and its prediction. 
-                    continue 
-                
+                    continue
+                    
                 else:
                     
-                    # PRUNING Negative Permanence Values (set them to 0)
-                    # PRUNING Positive Permanence Values (set them to 1)
-                    self.htm_network.prune_net_Permanences()
+                    self.htm_network.prune_net_permanences()
                     
                     # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
                     # Here, the network is learning to predict for symbol that is currrently in 'in_string[step]'
-                    multi_cell_MaxOverlap = self.htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
-                                                                                   prev_state=htm_states[step-1],
-                                                                                   prev_pred=htm_preds[step-1], 
-                                                                                   prev_pred_dend=htm_preds_dend[step-1], 
-                                                                                   curr_input=in_string[step])
+                    winner_cells, multiCellMaxOverlap = self.htm_network.update_net_synapticPermanences(curr_state=curr_state,
+                                                                                            prev_state=htm_states[step-1],
+                                                                                            prev_pred=htm_preds[step-1], 
+                                                                                            prev_pred_dend=htm_preds_dend[step-1],
+                                                                                            prev_winner_cells=htm_winner_cells[step-1]
+                                                                                            )
+                    htm_winner_cells.append(winner_cells)
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=in_string[step]))
                     
-                    if multi_cell_MaxOverlap == True:
+                    if multiCellMaxOverlap == True:
                         print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
                     
                 
@@ -139,7 +149,7 @@ class Experimentor():
                 if step == len(in_string)-1:
                     
                     curr_state, _, _ = self.htm_network.get_net_state(prev_pred=curr_pred,
-                                                                      curr_input=self.z_minicols)
+                                                                      curr_input=self.z_onehot)
                     htm_states.append(curr_state)
                     # Since there won't be any predictions occurring at the timestep of 'Z', as input,
                     # 'curr_pred' and 'curr_pred_dend' need not be appended at all. Also, NONE of the cells
@@ -147,29 +157,31 @@ class Experimentor():
                     # for 'Z'. In other words, the output of 'dot_prod(net_state,cell_connSynapses)' in 
                     # 'get_onestep_prediction()' will always be all zero, at this step!
                 
-                    self.htm_network.prune_net_Permanences()
+                    self.htm_network.prune_net_permanences()
                     
-                    multi_cell_MaxOverlap =self.htm_network.do_net_synaPermUpdate(curr_state=curr_state, 
-                                                                                  prev_state=htm_states[step],
-                                                                                  prev_pred=htm_preds[step], 
-                                                                                  prev_pred_dend=htm_preds_dend[step], 
-                                                                                  curr_input=self.z_minicols)
+                    _, multiCellMaxOverlap =self.htm_network.update_net_synapticPermanences(curr_state=curr_state, 
+                                                                                           prev_state=htm_states[step],
+                                                                                           prev_pred=htm_preds[step], 
+                                                                                           prev_pred_dend=htm_preds_dend[step],
+                                                                                           prev_winner_cells=htm_winner_cells[step]
+                                                                                           )
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=self.z_minicols))
                     
-                    if multi_cell_MaxOverlap == True:
-                        print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
+                    if multiCellMaxOverlap == True:
+                        print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at Z.')
                     
             
             df_res.loc[string_idx] = [in_string_alpha, 
                                       np.array(htm_states), 
                                       np.array(htm_preds), 
-                                      np.array(htm_preds_dend), 
+                                      np.array(htm_preds_dend),
+                                      np.array(htm_winner_cells),
                                       htm_net_]
             
             # np.array(htm_states) is numpy array of shape: (<len(in_string)>+1,M,N)
             # np.array(htm_preds) is numpy array of shape: (<len(in_string)>,M,N)
             # np.array(htm_preds_dend) is numpy array of shape: (<len(in_string)>,M,N)
-            
+            # np.array(htm_winner_cells) is numpy array of shape: (<len(in_string)>,M,N)
             
         dict_results = {
             'results': df_res,

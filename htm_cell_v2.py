@@ -8,63 +8,92 @@ class HTM_CELL():
     
     """
     
-    def __init__(self, i=None, j=None, M=None, N=None, n_dendrites=None, n_synapses=None, 
-                 nmda_th=None, perm_th=None, perm_init=None, perm_init_sd=None):
+    def __init__(self, cellsPerColumn=None, numColumns=None, 
+                 maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
+                 nmdaThreshold=None, permThreshold=None, permInit=None, permInit_sd=None):
         
-        """
-        
-        """
-        
-        self.M = M # number of cells per minicolumn
-        self.N = N # number of minicolumns
-        
-        self.n_dendrites = n_dendrites # number of dendritic segments on a single cell
-        self.n_synapses = n_synapses # total number of CONNECTED synapses on a single dendritic segment
-        
-        self.nmda_th = nmda_th
-        self.perm_th = perm_th
-        self.perm_init = perm_init
-        self.perm_init_sd = perm_init_sd
+        self.M = cellsPerColumn
+        self.N = numColumns 
+
+        self.maxDendritesPerCell = maxDendritesPerCell
+        self.maxSynapsesPerDendrite = maxSynapsesPerDendrite # max. number of CONNECTED synapses on a 
+                                                             # single dendritic segment.
+        self.nmdaThreshold = nmdaThreshold
+        self.permThreshold = permThreshold
+        self.permInit = permInit
+        self.permInit_sd = permInit_sd
         
         # list containing the matrices of potential synapses (permanence values) for each dendrite
-        # of the HTM cell; numpy array of (max.) <n_dendrites> MxN matrices, (max. possible) shape: (<n_dendrites>,M,N)
-        self.dendrites = None
+        # of the HTM cell; shape: (<maxDendritesPerCell>,M,N). There are NO dendrites initially.
+        self.dendrites = [None for i in range(maxDendritesPerCell)]
         
         self.dutycycle = []
-        
         
         return
     
     
-    def get_cell_connSynapses(self):
+    def get_cell_numDendrites(self):
+        
+        numDendrites = 0
+        for i in range(self.maxDendritesPerCell):
+            if self.dendrites[i] is None:
+                continue
+            else:
+                numDendrites+=1
+        
+        return numDendrites
+    
+    
+    def get_cell_numSynapsesOnDendrite(self, dendrite_idx):
+        
+        numSynapsesOnDendrite = None
+        
+        return numSynapsesOnDendrite
+    
+    
+    def grow_cell_newDendrite(self, presynaptic_WinnerCells):
+        
+        newDendrite = np.array(np.random.normal(loc=self.permInit, scale=self.permInit_sd, size=[self.M, self.N]), 
+                               dtype=np.float64)
+        
+        # 'newDendrite' will ONLY have connections (at permInit level) to 'presynaptic_WinnerCells'.
+        # The rest will be all 0.0.
+        newDendrite = newDendrite*presynaptic_WinnerCells
+        
+        # 'newDendrite' will be assigned to the first non-NONE index in self.dendrites array
+        for i in range(self.maxDendritesPerCell):
+            if self.dendrites[i] is None:
+                dendrite_idx = i
+                break
+            else:
+                continue
+            
+        self.dendrites[dendrite_idx] = newDendrite
+
+        return None
+    
+    
+    def get_cell_connectedSynapses(self):
         """
         For getting the connected synapses on all the dendrites of the cell.
         
-        Returns
-        -------
-        A Boolean array of size (n_dendrites, M, N)
-
         """
         
-        if self.dendrites is None:
+        if len(self.dendrites) == 0:
             return None
         else:
-            return np.array(self.dendrites > self.perm_th) # boolean list of (max.) <n_dendrites> MxN binary matrices-
+            return np.array(np.array(self.dendrites) > self.perm_th) # boolean list of <n_dendrites> MxN 
+                                                                     # binary matrices.
         
             
-        
-    def get_cell_synaPermanences(self):
+    def get_cell_dendrites(self):
         """
         For getting the permanence values of all synapses on all the dendrites 
         of the cell.
         
-        Returns
-        -------
-        A Boolean array of size (n_dendrites, M, N)
-
         """
         
-        return self.dendrites
+        return np.array(self.dendrites)
     
     
     def update_cell_dutycycle(self, prev_state=None, prev_pred=None):
