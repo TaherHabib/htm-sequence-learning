@@ -49,35 +49,24 @@ class HTM_NET():
 
         """
         
-        # ASSUMPTION: There will never be two dendrites on the same cell that
-        # get activated to the same activity pattern in the population. BUT 
-        # this assumption may be broken (?). CHECK. (ANS: So far there has been 
-        # no evidence that this assumption may break.)
-        
         # MxN binary numpy array to store the predictive states of all cells.
         pred_state = np.zeros([self.M, self.N], dtype=np.int8)
         
-        # List to store the index of the dendrites that led to the predictive 
-        # states of the cell (i,j). Elements are 2-tuples with:
-        # first entry: index of the cell, (i,j)
-        # second entry: 1D numpy array of max. length <cell.n_dendrites>                    
-        pred_dendrites = {} 
+        # Dictionary to store the index of the dendrites that led to the predictive states of the cell (i,j).
+        # key: index of the cell, (i,j)
+        # value: 1D numpy array of max. possible length <maxDendritesPerCell>                    
+        dict_predDendrites = {} 
         
         for j in range(self.N):
             for i in range(self.M):
-                cell_connectedSynapses = self.net_arch[i,j].get_cell_connectedSynapses() 
                 
-                if cell_connectedSynapses is not None:    
-                    # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
-                    cell_dendActivity = dot_prod(net_state,cell_connectedSynapses)>self.net_arch[i,j].nmda_th
+                cell_predictivity, predDendrites = self.net_arch[i,j].get_cell_predictivity(net_state)
                 
-                    # if any denrite of the cell is active, then the cell becomes predictive.
-                    if any(cell_dendActivity):
-                        pred_state[i,j] = 1
-                        pred_dendrites[(i,j)] = np.where(cell_dendActivity)[0] # Dict 'value' is 1D numpy array 
-                                                                               # of max. length <cell.n_dendrites>
-                        
-        return pred_state, pred_dendrites
+                if cell_predictivity:
+                    pred_state[i,j] = 1
+                    dict_predDendrites[(i,j)] = predDendrites
+                    
+        return pred_state, dict_predDendrites
     
     
     def get_net_LRDPrediction(self):
@@ -149,15 +138,37 @@ class HTM_NET():
                 curr_state[:,j] -= 1 
                 
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
-        curr_pred, curr_pred_dend = self.get_net_oneStepPrediction(curr_state)
+        curr_pred, curr_predDendrites = self.get_net_oneStepPrediction(curr_state)
         
-        return curr_state, curr_pred, curr_pred_dend
+        return curr_state, curr_pred, curr_predDendrites
     
     
     def update_net_synapticPermanences(self,
                                        curr_state=None, prev_state=None, 
                                        prev_pred=None, prev_pred_dend=None,
                                        prev_winner_cells=None):
+        """
+        Function for Hebbian Learning.
+
+        Parameters
+        ----------
+        curr_state : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_state : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_pred : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_pred_dend : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_winner_cells : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        multiCellMaxOverlap : TYPE
+            DESCRIPTION.
+
+        """
         
         #----------------------------------------------------------------------
         # From currently active columns, collect all columns that are bursting,
@@ -167,19 +178,18 @@ class HTM_NET():
         
         active_cols = np.unique(np.where(curr_state)[1]) # np.array of length <k>
         
-        # 'predicted_cols' will be np.array of max. possible length <self.N>
-        predicted_cols = np.unique(np.where(prev_pred)[1]) 
+        predicted_cols = np.unique(np.where(prev_pred)[1]) # np.array of max. possible length <self.N>
                 
         bursting_cols = [col for col in active_cols if curr_state[:, col].sum() == self.M]
         
         correctlyPredicted_cols = [col for col in active_cols if col not in bursting_cols]
         
-        incorrectlyPredicted_cols = [col for col in predicted_cols if col not in correctlyPredicted_cols]
+        otherPredicted_cols = [col for col in predicted_cols if col not in correctlyPredicted_cols]
         
-        #_______________________CASE I________________________________________
-        
+        #_______________________CASE I_________________________________________
+
         # When an active column is NOT PREDICTED, it will burst. 
-        # This would happen in the initial stages of learning)
+        # (This would happen in the initial stages of learning)
         # ---------------------------------------------------------------------
         
         if len(bursting_cols) != 0:
@@ -214,7 +224,7 @@ class HTM_NET():
         # cells)
         # ---------------------------------------------------------------------
         
-        for j in incorrectlyPredicted_cols:
+        for j in otherPredicted_cols:
             
             # extract the i-indices of all the WRONGLY predicted cells in the column
             cells_i = np.where(prev_pred[:,j])[0]
@@ -320,15 +330,12 @@ class HTM_NET():
         
         for i in range(self.M):
             for j in range(self.N):
-                dendrites = self.net_arch[i,j].get_cell_dendrites()
-                
-                if len(dendrites) != 0:
-                    dendrites[dendrites<0] = 0.0
-                    dendrites[dendrites>1] = 1.0
-                    
-                else:
-                    continue
-                
+                for dendrite in self.net_arch[i,j].get_cell_dendrites():
+                    if dendrite is None:
+                        continue
+                    else:
+                        dendrite[dendrite<0] = 0.0
+                        dendrite[dendrite>1] = 1.0
         return
     
     

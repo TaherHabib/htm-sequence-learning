@@ -23,7 +23,7 @@ def dot_prod(matrix_1=None, matrix_2=None):
     
     NOTE
     ----
-    This function also excepts Boolean (or binary) arrays as inputs.
+    This function also accepts Boolean (or binary) arrays as inputs.
 
     """
     
@@ -34,9 +34,6 @@ def dot_prod(matrix_1=None, matrix_2=None):
     if np.shape(matrix_2) == (M, N):
         matrix_2 = np.reshape(matrix_2, (1, M, N))
         
-    if len(matrix_2) == 0: # when there are no dendrites on the cell
-        return -100
-                    
     mult_res = np.multiply(matrix_1, matrix_2, dtype=np.float64)
     
     result = []

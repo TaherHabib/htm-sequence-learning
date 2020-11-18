@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from ufuncs import dot_prod
 
 class HTM_CELL():
     
@@ -23,7 +24,7 @@ class HTM_CELL():
         self.permInit = permInit
         self.permInit_sd = permInit_sd
         
-        # list containing the matrices of potential synapses (permanence values) for each dendrite
+        # list containing the (numpy array) MxN matrices of potential synapses (permanence values) for each dendrite
         # of the HTM cell; shape: (<maxDendritesPerCell>,M,N). There are NO dendrites initially.
         self.dendrites = [None for i in range(maxDendritesPerCell)]
         
@@ -79,12 +80,56 @@ class HTM_CELL():
         
         """
         
-        if len(self.dendrites) == 0:
-            return None
-        else:
-            return np.array(np.array(self.dendrites) > self.perm_th) # boolean list of <n_dendrites> MxN 
-                                                                     # binary matrices.
+        cell_connectedSynapses = []
         
+        for i in range(self.maxDendritesPerCell):
+            if self.dendrites[i] is None:
+                cell_connectedSynapses.append(None)
+            else:
+                cell_connectedSynapses.append((self.dendrites[i]>self.permThreshold))
+        
+        return np.array(cell_connectedSynapses, dtype=object) # numpy array of length <maxDendritesPerCell> of either 
+                                                              # 'None' elements or MxN (numpy) boolean matrices.        
+           
+                    
+    def get_cell_predicitivity(self, net_state):
+        """
+        Checks if the cell is in a predictive state, given the current 
+        timestep's network activity.
+
+        Parameters
+        ----------
+        net_state : binary array of shape (MxN). 
+        Containing the activity of cell population from current time step.
+    
+        Returns
+        -------
+        None.
+
+        """
+
+        # 'dendritesSpikes' will be a list containing <maxDendritesPerCell> elements,
+        # either 'None' if the dendrites have NO synapses; OR, a boolean value.
+        dendritesSpikes = []        
+        cell_predictivity = False
+        predDendrites = None
+        cell_connectedSynapses = self.get_cell_connectedSynapses() 
+                
+        for dendrite in cell_connectedSynapses:
+            if dendrite is None:
+                dendritesSpikes.append(None)
+            else:
+                # 'is_nmdaSpike' is a numpy boolean array of length 1, with either a True or False.
+                is_nmdaSpike = dot_prod(net_state, dendrite)>self.nmdaThreshold
+                dendritesSpikes.append(is_nmdaSpike[0])
+            
+        if any(dendritesSpikes):
+            cell_predictivity = True
+            predDendrites = np.where(dendritesSpikes)[0] # 1D numpy array of max. possible length 
+                                                         # <maxDendritesPerCell>.
+                                                        
+        return cell_predictivity, predDendrites
+    
             
     def get_cell_dendrites(self):
         """
@@ -93,7 +138,7 @@ class HTM_CELL():
         
         """
         
-        return np.array(self.dendrites)
+        return np.array(self.dendrites, dtype=object)
     
     
     def update_cell_dutycycle(self, prev_state=None, prev_pred=None):
