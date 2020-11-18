@@ -60,7 +60,7 @@ class HTM_CELL():
         # The rest will be all 0.0.
         newDendrite = newDendrite*presynaptic_WinnerCells
         
-        # 'newDendrite' will be assigned to the first non-NONE index in self.dendrites array
+        # 'newDendrite' will be assigned to the first "non-NONE" index in self.dendrites array
         for i in range(self.maxDendritesPerCell):
             if self.dendrites[i] is None:
                 dendrite_idx = i
@@ -70,7 +70,7 @@ class HTM_CELL():
             
         self.dendrites[dendrite_idx] = newDendrite
 
-        return None
+        return
     
     
     def get_cell_connectedSynapses(self):
@@ -99,4 +99,4 @@ class HTM_CELL():
     def update_cell_dutycycle(self, prev_state=None, prev_pred=None):
         
         
-        return None
+        return

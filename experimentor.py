@@ -10,24 +10,25 @@ from rebergrammar_generator import *
 
 class Experimentor():
     
-    def __init__(self, M=None, N=None, k=None, 
-                 n_dendrites=None, n_synapses=None, 
-                 nmda_th=None, perm_th=None, perm_init=None, perm_init_sd=None,
+    def __init__(self, numColumns=None, cellsPerColumn=None, columnsPerChar=None, 
+                 maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
+                 nmdaThreshold=None, permThreshold=None, permInit=None, permInit_sd=None,
                  perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None,
-                 activity_horizon=None, activity_th=None,
+                 activityHorizon=None, activityThreshold=None,
                  do_ERG=False, nof_strings=1000):
         
-        self.n_dendrites = n_dendrites
-        self.n_synapses = n_synapses 
-        self.nmda_th = nmda_th
-        self.perm_th = perm_th
-        self.perm_init = perm_init
-        self.activity_horizon = activity_horizon
-        self.activity_th = activity_th
+        self.maxDendritesPerCell = maxDendritesPerCell
+        self.maxSynapsesPerDendrite = maxSynapsesPerDendrite
+        self.nmdaThreshold = nmdaThreshold
+        self.permThreshold = permThreshold
+        self.permInit = permInit
+        self.permInit_sd = permInit_sd
+        self.activityHorizon = activityHorizon
+        self.activityThreshold = activityThreshold
         
-        self.M = M 
-        self.N = N 
-        self.k = k
+        self.M = cellsPerColumn
+        self.N = numColumns 
+        self.k = columnsPerChar
         self.perm_decrement = perm_decrement
         self.perm_increment = perm_increment
         self.perm_decay = perm_decay
@@ -37,25 +38,27 @@ class Experimentor():
         self.nof_strings = nof_strings
     
         # Initializing Grammar
-        self.rg = Reber_Grammar(N, k)
+        self.rg = Reber_Grammar(numColumns=numColumns, columnsPerChar=columnsPerChar)
         self.df_CharsToMinicols = self.rg.df_CharsToMinicols
         
         # Onehot for 'Z'
-        self.z_onehot = rg.CharToOnehot('Z')
+        self.z_onehot = self.rg.CharToOnehot('Z')
         
         # Winner Cells for 'A'
         self.A_winner_cells = np.zeros([self.M, self.N], dtype=np.int8)
         random.seed(1)
         A_winnercells_i = random.choices(np.arange(self.M), k=self.k)
         for i in range(self.k):
-            A_winner_cells[A_winnercells_i[i], self.df_CharsToMinicols['A'][i]] = 1            
+            self.A_winner_cells[A_winnercells_i[i], self.df_CharsToMinicols['A'][i]] = 1            
         
         # Initializing Network
-        self.htm_network = HTM_NET(M, N, k, 
-                                   n_dendrites=n_dendrites, n_synapses=n_synapses, nmda_th=nmda_th, 
-                                   perm_th=perm_th, perm_init=perm_init, perm_init_sd=perm_init_sd,
-                                   perm_decrement=perm_decrement, perm_increment=perm_increment,
-                                   perm_decay=perm_decay, perm_boost=perm_boost)
+        self.htm_network = HTM_NET(cellsPerColumn=self.M, numColumns=self.N,
+                                   maxDendritesPerCell=self.maxDendritesPerCell, 
+                                   maxSynapsesPerDendrite=self.maxSynapsesPerDendrite, 
+                                   nmdaThreshold=self.nmdaThreshold, permThreshold=self.permThreshold, 
+                                   permInit=self.permInit, permInit_sd=self.permInit_sd,
+                                   perm_decrement=self.perm_decrement, perm_increment=self.perm_increment,
+                                   perm_decay=self.perm_decay, perm_boost=self.perm_boost)
         
         
         # Generating Input and Prediction Strings

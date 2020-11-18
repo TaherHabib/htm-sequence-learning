@@ -19,7 +19,7 @@ graph = [[(1,5),('T','P')] , [(1,2),('S','X')], \
 
 class Reber_Grammar():
     
-    def __init__(self, N, k):
+    def __init__(self, numColumns, columnsPerChar):
         """
         Initializer function.
         
@@ -42,8 +42,8 @@ class Reber_Grammar():
         self.emb_chars = emb_chars
         self.graph = graph
         
-        self.N = N
-        self.k = k
+        self.N = numColumns
+        self.k = columnsPerChar
         
         self.df_CharsToMinicols = pd.DataFrame() # DataFrame with cols: 'A', 'T', 'P', etc. each with 'k'
                                                  # minicolumn indices corresponding to that character.
@@ -187,12 +187,25 @@ class Reber_Grammar():
         
         return reberString
     
+    
     def CharToOnehot(self, char):
+        """
+        Returns Character's onehot encoding.
+
+        Parameters
+        ----------
+        char : str (character)
+
+        Returns
+        -------
+        charOnehot : onehot encoding of 'char' (in terms of the N minicolumns)
+        """
         
         charOnehot = np.zeros(self.N, dtype=np.int8)
         charOnehot[self.df_CharsToMinicols[char]] = 1
         
         return charOnehot
+    
     
     def in_grammar(self, word):
         """
