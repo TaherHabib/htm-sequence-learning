@@ -1,12 +1,33 @@
+"""
+FILE DESCRIPTION:
+------------------------
+
+....
+
+
+OTHER NOTES:
+------------
+Issue 001: 
+    When a bursting column's capacity is found to be FULL, when growing a new dendrite in NO BEST MATCH condition.
+    
+Issue 002: 
+    When a bursting column's capacity is found to be FULL, when growing a new dendrite in the condition where there was
+    a best match found, but there were not enough capacity on the best matching dendrite to grow new synapses to the 
+    previous timestep's winner cells.
+    
+Issue 003:
+    When in a bursting column, a maximum overlap with the previous active cells of the network is found at two different
+    places – either on different cells in a column, or on different dendrites of the same cell in that column.
+    
+"""
 
 import numpy as np
 import pandas as pd
-
+import random 
 
 from htm_cell import HTM_CELL
 from ufuncs import dot_prod
 
-# ========================DEFINING HTM NETWORK=================================
 
 class HTM_NET():
 
@@ -18,6 +39,10 @@ class HTM_NET():
         self.M = cellsPerColumn # 8
         self.N = numColumns # 175
         
+        self.maxDendritesPerCell = maxDendritesPerCell
+        self.maxSynapsesPerDendrite = maxSynapsesPerDendrite # max. number of CONNECTED synapses on a 
+                                                             # single dendritic segment.
+        
         self.perm_decrement = perm_decrement
         self.perm_increment = perm_increment
         self.perm_decay = perm_decay
@@ -28,7 +53,7 @@ class HTM_NET():
         self.net_arch = np.empty([self.M, self.N], dtype=HTM_CELL)        
         for i in range(self.M):
             for j in range(self.N):
-                self.net_arch[i,j] = HTM_CELL(self.M, self.N, maxDendritesPerCell, maxSynapsesPerDendrite,
+                self.net_arch[i,j] = HTM_CELL(self.M, self.N, self.maxDendritesPerCell, self.maxSynapsesPerDendrite,
                                               nmdaThreshold, permThreshold, permInit, permInit_sd)        
         return
     
@@ -140,35 +165,15 @@ class HTM_NET():
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
         curr_pred, curr_predDendrites = self.get_net_oneStepPrediction(curr_state)
         
+        # TODO: UPDATE TO THE DUTY CYCLES OF CELLS
+        
         return curr_state, curr_pred, curr_predDendrites
     
     
     def update_net_synapticPermanences(self,
                                        curr_state=None, prev_state=None, 
-                                       prev_pred=None, prev_pred_dend=None,
-                                       prev_winner_cells=None):
-        """
-        Function for Hebbian Learning.
-
-        Parameters
-        ----------
-        curr_state : TYPE, optional
-            DESCRIPTION. The default is None.
-        prev_state : TYPE, optional
-            DESCRIPTION. The default is None.
-        prev_pred : TYPE, optional
-            DESCRIPTION. The default is None.
-        prev_pred_dend : TYPE, optional
-            DESCRIPTION. The default is None.
-        prev_winner_cells : TYPE, optional
-            DESCRIPTION. The default is None.
-
-        Returns
-        -------
-        multiCellMaxOverlap : TYPE
-            DESCRIPTION.
-
-        """
+                                       prev_pred=None, prev_predDendrites=None,
+                                       prev_winnerCells=None):
         
         #----------------------------------------------------------------------
         # From currently active columns, collect all columns that are bursting,
@@ -193,9 +198,9 @@ class HTM_NET():
         # ---------------------------------------------------------------------
         
         if len(bursting_cols) != 0:
-            winner_cells, multiCellMaxOverlap = self.net_burstColumns(bursting_cols, 
-                                                                      prev_state,
-                                                                      prev_winner_cells)
+            winnerCells, multiCellMaxOverlap = self.case_net_burstColumns(bursting_cols, 
+                                                                          prev_state,
+                                                                          prev_winnerCells)
                 
     
         #_______________________CASE II________________________________________
@@ -244,52 +249,101 @@ class HTM_NET():
         # ---------------------------------------------------------------------
         
         
-        return multiCellMaxOverlap
+        return winnerCells, multiCellMaxOverlap
     
     
-    def net_burstColumns(self, bursting_cols, prev_state, prev_winner_cells):
-        
-        # the best matching segment would be selected based on...
-        # 'winner_cells' are based on...
+    def case_net_burstColumns(self, bursting_cols, prev_state, prev_winnerCells):
         
         multiCellMaxOverlap = False
-        winner_cells = []
+        winner_cells = np.zeros([self.M, self.N], dtype=np.int8)
         
-        
-                
         for j in bursting_cols:
-            
-            overlap = [] # 'overlap' will eventually be a list of shape: (self.M, <cell.n_dendrites>)
-            maxOverlapScore = -1
-            
-            for i in range(self.M):                
+
+            maxOverlapScore = -100
+            bestMatchingCellDendrite = (None, None)
+            cells_UnusedDendrites = [] # this will be an array of <M> elements with integer entries
+                                      # between 0 and <maxDendritesPerCell>.
+            for i in range(self.M):
                 
-                # 'cell_dendFloat' will be a float64 array of Max. shape (<cell.n_dendrites>,)
-                cell_dendOverlap = dot_prod(prev_state, self.net_arch[i,j].dendrites) 
-                overlap.append(cell_dendOverlap)
+                cells_UnusedDendrites.append(self.net_arch[i,j].get_cell_numUnusedDendrites())
                 
+                for dendrite_idx in range(self.maxDendritesPerCell):
+                    if self.net_arch[i,j].dendrites[dendrite_idx] is None:
+                        continue
+                    else:
+                        # 'prev_state' is a binary and 'dendrites[idx]' is a float (numpy) MxN matrix. Hence,
+                        # 'cell_dendriteOverlap' will be a numpy array of length 1, with a single float value,
+                        # greater than 0.
+                        cell_dendriteOverlap = dot_prod(prev_state, self.net_arch[i,j].dendrites[dendrite_idx])
+                        
+                        if cell_dendriteOverlap >= maxOverlapScore:        
+                            if cell_dendriteOverlap == maxOverlapScore:
+                                multiCellMaxOverlap = True
+                                print(f'Issue 003 encountered! For column: {j}')
+                    
+                            maxOverlapScore = cell_dendriteOverlap
+                            bestMatchingCellDendrite = (i, dendrite_idx)                
                 
-                if cell_dendOverlap is None:
-                    # Make a new segment
-                    ...
+            # If NO best matching dendrite is found, grow a new one on least used cell in the column.
+            if bestMatchingCellDendrite[0] is None:
+                
+                # Checking for the condition where all <maxDendritesPerCell> dendrtes
+                # are used on every cell and still NO Match was found.
+                if np.amax(cells_UnusedDendrites) == 0:
+                    print(f'Issue 001 encountered! For column: {j}')  
+                else:
+                    # Select randomly one cell from the set of all cells with equal number of UnusedDendrites
+                    cellIdx_leastUsedCell = random.choice(np.where(cells_UnusedDendrites == np.amax(cells_UnusedDendrites))[0])
+                    # Grow a new dendrite on this cell with connections to 'prev_WinnerCells'
+                    self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(prev_winnerCells)               
+                    
+                    winner_cells[cellIdx_leastUsedCell, j] = 1
                     
                 
-                    
-                    
+            # Else select the best matching cell and dendrite for learning, i.e.,
+            # Reinforce connections with active cells in 'prev_state' and punish all other 
+            # synaptic connections.
+            else:
+                self.net_arch[bestMatchingCellDendrite[0], j].update_cell_dendritePermanences(dendrite_idx=bestMatchingCellDendrite[1],
+                                                                                              prev_state=prev_state)
+                winner_cells[bestMatchingCellDendrite[0], j] = 1
                 
-            
-            # NOTE: Ideally, the maximum value in overlap should occur at a unique position.
-            # Single cell's single dendrite. However, sometimes the maximum value in 'overlap' 
-            # can be at two different places (extremely rarely):
-            # 1. In two different cells, out of the M cells in the minicolumn.
-            # 2. In the same cell, but with two different dendrites.
-            
-            max_overlap_cell = np.where(overlap==np.amax(overlap))[0]
-            max_overlap_dendrite = np.where(overlap==np.amax(overlap))[1]
-            
-            if len(max_overlap_cell) > 1: # (The RARE CASE)
+                # Growing new synapses to a subset of the previous timestep's winner cells
+                # ONLY when there is a capacity on the dendrite to grow new synapses.                
+                if self.net_arch[bestMatchingCellDendrite[0], j].get_cell_numSynapsesOnDendrite(bestMatchingCellDendrite[1]) < self.maxSynapsesPerDendrite:
+                    self.net_arch[bestMatchingCellDendrite[0], j].grow_cell_newSynapsesOnDendrite(dendrite_idx=bestMatchingCellDendrite[1],
+                                                                                                  prev_winnerCells=prev_winnerCells)
+                else:
+                    if np.amax(cells_UnusedDendrites) == 0:
+                        print(f'Issue 002 encountered! For column: {j}')
+                    else:
+                        cellIdx_leastUsedCell = random.choice(np.where(cells_UnusedDendrites == np.amax(cells_UnusedDendrites))[0])
+                        self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(prev_winnerCells)               
+                        
+                        winner_cells[bestMatchingCellDendrite[0], j] = 0
+                        winner_cells[cellIdx_leastUsedCell, j] = 1
                 
-                multi_cell_MaxOverlap = True
+        
+        
+        return winner_cells, multiCellMaxOverlap            
+                    
+        
+    def case_net_reinforcePredictedColumns(self):
+        
+        
+        return
+    
+    
+    def case_net_decayPredictedColumns(self):
+        
+        
+        return
+    
+    
+            
+           
+                
+                multiCellMaxOverlap = True
                 
                 # 'MaxOverlap_cell_dend' is a MxN permanence value matrix.
                 # In the case when there are more than 1 cells with a max overlap with 
@@ -314,9 +368,7 @@ class HTM_NET():
                 self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend + self.perm_increment*prev_state 
                 - self.perm_decrement*MaxOverlap_cell_dend
         
-        return winner_cells, multiCellMaxOverlap
-    
-    
+        
     def prune_net_permanences(self):
         """
         Prunes Negative Permanence Values (setting them to 0).
@@ -330,7 +382,7 @@ class HTM_NET():
         
         for i in range(self.M):
             for j in range(self.N):
-                for dendrite in self.net_arch[i,j].get_cell_dendrites():
+                for dendrite in self.net_arch[i,j].get_cell_allDendrites():
                     if dendrite is None:
                         continue
                     else:
@@ -388,14 +440,4 @@ class HTM_NET():
 # random.shuffle(minicolumns)
 # for i in range(self.N//self.k):
 #     mc = minicolumns[i*self.k:(i+1)*self.k]
-# =============================================================================
- 
-
-# array to store the MxN matrix – at each timestep – of each matrix P of 
-# shape (<dendrites_percell>,M,N) which stores the permanence values of that cell
-# htm_net_synaPerm = []
-
-
-      
-
 # =============================================================================

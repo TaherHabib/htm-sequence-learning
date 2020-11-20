@@ -36,8 +36,8 @@ class HTM_CELL():
     def get_cell_numDendrites(self):
         
         numDendrites = 0
-        for i in range(self.maxDendritesPerCell):
-            if self.dendrites[i] is None:
+        for dendrite in self.dendrites:
+            if dendrite is None:
                 continue
             else:
                 numDendrites+=1
@@ -45,32 +45,51 @@ class HTM_CELL():
         return numDendrites
     
     
-    def get_cell_numSynapsesOnDendrite(self, dendrite_idx):
+    def get_cell_numSynapsesOnDendrite(self, dendrite_idx=None):
         
-        numSynapsesOnDendrite = None
-        
-        return numSynapsesOnDendrite
+        return np.count_nonzero(self.dendrites[dendrite_idx])
     
     
-    def grow_cell_newDendrite(self, presynaptic_WinnerCells):
+    def grow_cell_newDendrite(self, prev_winnerCells=None):
         
         newDendrite = np.array(np.random.normal(loc=self.permInit, scale=self.permInit_sd, size=[self.M, self.N]), 
                                dtype=np.float64)
         
+        newDendrite = newDendrite*prev_winnerCells
         # 'newDendrite' will ONLY have connections (at permInit level) to 'presynaptic_WinnerCells'.
-        # The rest will be all 0.0.
-        newDendrite = newDendrite*presynaptic_WinnerCells
+        # The rest will be all 0.0. Any dendrite will have atmost <maxSynapsesPerDendrite> synapses.
+        
+        newDendrite_idx = None
         
         # 'newDendrite' will be assigned to the first "non-NONE" index in self.dendrites array
         for i in range(self.maxDendritesPerCell):
             if self.dendrites[i] is None:
-                dendrite_idx = i
+                newDendrite_idx = i
                 break
             else:
                 continue
             
-        self.dendrites[dendrite_idx] = newDendrite
+        if newDendrite_idx is None:
+            print('Cell Capacity is FULL! :(')
+        
+        else:
+            self.dendrites[newDendrite_idx] = newDendrite
 
+        return
+    
+    
+    def grow_cell_newSynapsesOnDendrite(self, dendrite_idx=None, prev_winnerCells=None):
+        
+        newSynapsesCapacity = self.maxSynapsesPerDendrite - self.get_cell_numSynapsesOnDendrite(dendrite_idx)
+        
+        
+        
+        return
+    
+    
+    def update_cell_dendritePermanences(self, dendrite_idx=None, prev_state=None):
+        
+        
         return
     
     
@@ -82,17 +101,16 @@ class HTM_CELL():
         
         cell_connectedSynapses = []
         
-        for i in range(self.maxDendritesPerCell):
-            if self.dendrites[i] is None:
+        for dendrite in self.dendrites:
+            if dendrite is None:
                 cell_connectedSynapses.append(None)
             else:
-                cell_connectedSynapses.append((self.dendrites[i]>self.permThreshold))
+                cell_connectedSynapses.append(dendrite>self.permThreshold)
         
         return np.array(cell_connectedSynapses, dtype=object) # numpy array of length <maxDendritesPerCell> of either 
                                                               # 'None' elements or MxN (numpy) boolean matrices.        
-           
                     
-    def get_cell_predicitivity(self, net_state):
+    def get_cell_predicitivity(self, net_state=None):
         """
         Checks if the cell is in a predictive state, given the current 
         timestep's network activity.
@@ -130,8 +148,21 @@ class HTM_CELL():
                                                         
         return cell_predictivity, predDendrites
     
-            
-    def get_cell_dendrites(self):
+     
+    def get_cell_numUnusedDendrites(self):
+        
+        num_UnusedDendrites = 0
+        
+        for dendrite in self.dendrites:
+            if dendrite is None:
+                num_UnusedDendrites += 1
+            else:
+                continue
+        
+        return num_UnusedDendrites
+    
+    
+    def get_cell_allDendrites(self):
         """
         For getting the permanence values of all synapses on all the dendrites 
         of the cell.

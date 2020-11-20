@@ -1,3 +1,26 @@
+"""
+FILE DESCRIPTION:
+------------------------
+
+....
+
+
+OTHER NOTES:
+------------
+Issue 001: 
+    When a bursting column's capacity is found to be FULL, when growing a new dendrite in NO BEST MATCH condition.
+    
+Issue 002: 
+    When a bursting column's capacity is found to be FULL, when growing a new dendrite in the condition where there was
+    a best match found, but there were not enough capacity on the best matching dendrite to grow new synapses to the 
+    previous timestep's winner cells.
+    
+Issue 003:
+    When in a bursting column, a maximum overlap with the previous active cells of the network is found at two different
+    places – either on different cells in a column, or on different dendrites of the same cell in that column.
+    
+"""
+
 import numpy as np
 import pandas as pd
 import copy
@@ -138,14 +161,14 @@ class Experimentor():
                     winner_cells, multiCellMaxOverlap = self.htm_network.update_net_synapticPermanences(curr_state=curr_state,
                                                                                             prev_state=htm_states[step-1],
                                                                                             prev_pred=htm_preds[step-1], 
-                                                                                            prev_pred_dend=htm_preds_dend[step-1],
-                                                                                            prev_winner_cells=htm_winner_cells[step-1]
+                                                                                            prev_predDendrites=htm_preds_dend[step-1],
+                                                                                            prev_winnerCells=htm_winner_cells[step-1]
                                                                                             )
                     htm_winner_cells.append(winner_cells)
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=in_string[step]))
                     
                     if multiCellMaxOverlap == True:
-                        print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at:', in_string_alpha[step])
+                        print('Issue 003 in String:', in_string_alpha, 'at:', in_string_alpha[step])
                     
                 
                 # LEARNING TO PREDICT 'Z' at the penultimate step
@@ -165,13 +188,13 @@ class Experimentor():
                     _, multiCellMaxOverlap =self.htm_network.update_net_synapticPermanences(curr_state=curr_state, 
                                                                                            prev_state=htm_states[step],
                                                                                            prev_pred=htm_preds[step], 
-                                                                                           prev_pred_dend=htm_preds_dend[step],
-                                                                                           prev_winner_cells=htm_winner_cells[step]
+                                                                                           prev_predDendrites=htm_preds_dend[step],
+                                                                                           prev_winnerCells=htm_winner_cells[step]
                                                                                            )
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=self.z_minicols))
                     
                     if multiCellMaxOverlap == True:
-                        print('Multi Cell MaxOverlap in String:', in_string_alpha, 'at Z.')
+                        print('Issue 003 in String:', in_string_alpha, 'at Z.')
                     
             
             df_res.loc[string_idx] = [in_string_alpha, 
