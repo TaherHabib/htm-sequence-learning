@@ -42,7 +42,34 @@ def dot_prod(matrix_1=None, matrix_2=None):
     
     return np.array(result, dtype=np.float64)
 
-#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+def get_idx_nonZeroElements(matrix=None):
+    """
+    Return a list of tuples (row_idx, col_idx) of all the non-zero elements in 
+    a given 'matrix'
+
+    Parameters
+    ----------
+    matrix : any int/float matrix. The default is None.
+
+    Returns
+    -------
+    list_idx_nonZeroElements : list of 2-tuples.
+
+    """
+    
+    list_idx_nonZeroElements = []
+    
+    list_row_idx_nonZero = np.where(matrix)[0]
+    list_col_idx_nonZero = np.where(matrix)[1]
+    
+    for i in range(len(list_col_idx_nonZero)):
+        list_idx_nonZeroElements.append((list_row_idx_nonZero[i] , list_col_idx_nonZero[i]))
+    
+    return list_idx_nonZeroElements
+
+
 
 def false_match_prob(k=None,tot_neurons=None,connSynapses_perdend=None,nmda_threshold=None):
     """

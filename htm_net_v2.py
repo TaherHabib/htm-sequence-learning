@@ -41,20 +41,15 @@ class HTM_NET():
         
         self.maxDendritesPerCell = maxDendritesPerCell
         self.maxSynapsesPerDendrite = maxSynapsesPerDendrite # max. number of CONNECTED synapses on a 
-                                                             # single dendritic segment.
-        
-        self.perm_decrement = perm_decrement
-        self.perm_increment = perm_increment
-        self.perm_decay = perm_decay
-        self.perm_boost = perm_boost
-        
+                                                             # single dendritic segment.        
         
         # Initializing every cell in the network, i.e. setting up the dendrites for each cell.
         self.net_arch = np.empty([self.M, self.N], dtype=HTM_CELL)        
         for i in range(self.M):
             for j in range(self.N):
                 self.net_arch[i,j] = HTM_CELL(self.M, self.N, self.maxDendritesPerCell, self.maxSynapsesPerDendrite,
-                                              nmdaThreshold, permThreshold, permInit, permInit_sd)        
+                                              nmdaThreshold, permThreshold, permInit, permInit_sd,
+                                              perm_decrement, perm_increment, perm_decay, perm_boost)        
         return
     
     
@@ -198,10 +193,9 @@ class HTM_NET():
         # ---------------------------------------------------------------------
         
         if len(bursting_cols) != 0:
-            winnerCells, multiCellMaxOverlap = self.case_net_burstColumns(bursting_cols, 
-                                                                          prev_state,
-                                                                          prev_winnerCells)
-                
+            burstColumns_winnerCells, multiCellMaxOverlap = self.case_net_burstColumns(burstCols=bursting_cols,
+                                                                                       prev_state=prev_state,
+                                                                                       prev_winnerCells=prev_winnerCells)
     
         #_______________________CASE II________________________________________
         
@@ -209,19 +203,11 @@ class HTM_NET():
         # predicted cells)
         # ---------------------------------------------------------------------
         
-        for j in correctlyPredicted_cols:
-            
-            # extract the i-indices of all the CORRECTLY predicted cells in the column
-            cells_i = np.where(prev_pred[:,j])[0]
-            
-            # Reinforce the active dendrites for all of the predicted cells in the minicolumn.
-            for i in cells_i:
-                
-                # for indices of all dendrites that led to cell's prediction.
-                for d in prev_pred_dend[i,j]:
-                    self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d] + self.perm_increment*prev_state 
-                    - self.perm_decrement*self.net_arch[i,j].dendrites[d]
-            
+        if len(correctlyPredicted_cols) != 0:
+            reinforcePredictedColumns_winnerCells = self.case_net_reinforcePredictedColumns(corrPredictedCols=correctlyPredicted_cols,
+                                                                                            prev_state=prev_state,
+                                                                                            prev_pred=prev_pred,
+                                                                                            prev_predDendrites=prev_predDendrites)
         
         #_______________________CASE III_______________________________________
         
@@ -229,18 +215,11 @@ class HTM_NET():
         # cells)
         # ---------------------------------------------------------------------
         
-        for j in otherPredicted_cols:
-            
-            # extract the i-indices of all the WRONGLY predicted cells in the column
-            cells_i = np.where(prev_pred[:,j])[0]
-            
-            # Punish the active dendrites for all of the wrongly predicted cells in the minicolumn.
-            for i in cells_i:
-                
-                # for indices of all dendrites that led to cell's wrong prediction.
-                for d in prev_pred_dend[i,j]:
-                    self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d] - self.perm_decay*prev_state
-                    
+        if len(otherPredicted_cols) != 0:
+            self.case_net_reinforcePredictedColumns(otherPredictedCols=otherPredicted_cols,
+                                                    prev_state=prev_state,
+                                                                                            prev_pred=prev_pred,
+                                                                                            prev_predDendrites=prev_predDendrites)
         
         #_______________________BOOSTING_______________________________________
         
@@ -249,23 +228,47 @@ class HTM_NET():
         # ---------------------------------------------------------------------
         
         
+        # TODO: Compute 'winnerCells' (MxN) matrix
+        winnerCells = None
+        
+        
         return winnerCells, multiCellMaxOverlap
     
     
-    def case_net_burstColumns(self, bursting_cols, prev_state, prev_winnerCells):
+    def case_net_burstColumns(self, burstCols=None, prev_state=None, prev_winnerCells=None):
+        """
+        
+
+        Parameters
+        ----------
+        burstCols : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_state : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_winnerCells : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        winner_cells : TYPE
+            DESCRIPTION.
+        multiCellMaxOverlap : TYPE
+            DESCRIPTION.
+
+        """
         
         multiCellMaxOverlap = False
-        winner_cells = np.zeros([self.M, self.N], dtype=np.int8)
+        winner_cells = []
         
-        for j in bursting_cols:
+        for j in burstCols:
 
             maxOverlapScore = -100
             bestMatchingCellDendrite = (None, None)
-            cells_UnusedDendrites = [] # this will be an array of <M> elements with integer entries
-                                      # between 0 and <maxDendritesPerCell>.
+            cells_numUnusedDendrites = [] # this will be an array of <M> elements with integer entries
+                                          # between 0 and <maxDendritesPerCell>.
             for i in range(self.M):
                 
-                cells_UnusedDendrites.append(self.net_arch[i,j].get_cell_numUnusedDendrites())
+                cells_numUnusedDendrites.append(self.net_arch[i,j].get_cell_numUnusedDendrites())
                 
                 for dendrite_idx in range(self.maxDendritesPerCell):
                     if self.net_arch[i,j].dendrites[dendrite_idx] is None:
@@ -289,15 +292,15 @@ class HTM_NET():
                 
                 # Checking for the condition where all <maxDendritesPerCell> dendrtes
                 # are used on every cell and still NO Match was found.
-                if np.amax(cells_UnusedDendrites) == 0:
+                if np.amax(cells_numUnusedDendrites) == 0:
                     print(f'Issue 001 encountered! For column: {j}')  
                 else:
                     # Select randomly one cell from the set of all cells with equal number of UnusedDendrites
-                    cellIdx_leastUsedCell = random.choice(np.where(cells_UnusedDendrites == np.amax(cells_UnusedDendrites))[0])
+                    cellIdx_leastUsedCell = random.choice(np.where(cells_numUnusedDendrites == np.amax(cells_numUnusedDendrites))[0])
                     # Grow a new dendrite on this cell with connections to 'prev_WinnerCells'
                     self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(prev_winnerCells)               
                     
-                    winner_cells[cellIdx_leastUsedCell, j] = 1
+                    winner_cells.append((cellIdx_leastUsedCell, j))
                     
                 
             # Else select the best matching cell and dendrite for learning, i.e.,
@@ -306,7 +309,7 @@ class HTM_NET():
             else:
                 self.net_arch[bestMatchingCellDendrite[0], j].update_cell_dendritePermanences(dendrite_idx=bestMatchingCellDendrite[1],
                                                                                               prev_state=prev_state)
-                winner_cells[bestMatchingCellDendrite[0], j] = 1
+                winner_cells.append((bestMatchingCellDendrite[0], j))
                 
                 # Growing new synapses to a subset of the previous timestep's winner cells
                 # ONLY when there is a capacity on the dendrite to grow new synapses.                
@@ -314,60 +317,82 @@ class HTM_NET():
                     self.net_arch[bestMatchingCellDendrite[0], j].grow_cell_newSynapsesOnDendrite(dendrite_idx=bestMatchingCellDendrite[1],
                                                                                                   prev_winnerCells=prev_winnerCells)
                 else:
-                    if np.amax(cells_UnusedDendrites) == 0:
+                    if np.amax(cells_numUnusedDendrites) == 0:
                         print(f'Issue 002 encountered! For column: {j}')
                     else:
-                        cellIdx_leastUsedCell = random.choice(np.where(cells_UnusedDendrites == np.amax(cells_UnusedDendrites))[0])
+                        cellIdx_leastUsedCell = random.choice(np.where(cells_numUnusedDendrites == np.amax(cells_numUnusedDendrites))[0])
                         self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(prev_winnerCells)               
                         
-                        winner_cells[bestMatchingCellDendrite[0], j] = 0
-                        winner_cells[cellIdx_leastUsedCell, j] = 1
-                
-        
+                        winner_cells.remove((bestMatchingCellDendrite[0], j))
+                        winner_cells.append((cellIdx_leastUsedCell, j))
         
         return winner_cells, multiCellMaxOverlap            
                     
         
-    def case_net_reinforcePredictedColumns(self):
+    def case_net_reinforcePredictedColumns(self, corrPredictedCols=None, prev_state=None, 
+                                           prev_pred=None, prev_predDendrites=None):
+        """
         
+
+        Parameters
+        ----------
+        corrPredictedCols : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_state : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_pred : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_predDendrites : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        winner_cells : TYPE
+            DESCRIPTION.
+
+        """
         
-        return
-    
-    
-    def case_net_decayPredictedColumns(self):
+        winner_cells = []
         
-        
-        return
-    
-    
+        for j in corrPredictedCols:
             
-           
+            # extract the i-indices of all the CORRECTLY predicted cells in the column
+            cells_i = np.where(prev_pred[:,j])[0]
+            
+            # Reinforce the active dendrites for all of the predicted cells in the minicolumn.
+            for i in cells_i:
                 
-                multiCellMaxOverlap = True
+                winner_cells.append((i,j))
                 
-                # 'MaxOverlap_cell_dend' is a MxN permanence value matrix.
-                # In the case when there are more than 1 cells with a max overlap with 
-                # 'prev_state', I take the first one (index [0]), reinforce it, and 
-                # simply re-initialize the other cells/dendrites.
-                MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
-                
-                # Decrement all synapses by p- and increment active synapses by p+
-                self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend + self.perm_increment*prev_state 
-                - self.perm_decrement*MaxOverlap_cell_dend
-                
-                # Re-initializing other cells within Max. Overlap
-                for d in range(1,len(max_overlap_cell)):
-                    self.net_arch[max_overlap_cell[d],j].dendrites[max_overlap_dendrite[d]] = \
-                        np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])                 
+                # for indices of all dendrites that led to cell's prediction.
+                for dendrite_idx in prev_predDendrites[(i,j)]:
                     
-            else:
-                
-                MaxOverlap_cell_dend = self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]]
-                
-                # Increment active synapses by p+ and Decrement all synapses by p-
-                self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend + self.perm_increment*prev_state 
-                - self.perm_decrement*MaxOverlap_cell_dend
+                    self.net_arch[i,j].update_cell_dendritePermanences(dendrite_idx=dendrite_idx,
+                                                                       prev_state=prev_state)
         
+        return winner_cells
+    
+    
+    def case_net_decayPredictedColumns(self, otherPredictedCols=None, prev_state=None,
+                                       prev_pred=None, prev_predDendrites=None):
+        
+        for j in otherPredictedCols:
+            
+            # extract the i-indices of all the OTHER predicted cells in the column
+            cells_i = np.where(prev_pred[:,j])[0]
+            
+            # Punish the active dendrites for all of the OTHER predicted cells in the minicolumn.
+            for i in cells_i:
+                
+                # for indices of all dendrites that led to cell's prediction.
+                for dendrite_idx in prev_predDendrites[(i,j)]:
+                    
+                    self.net_arch[i,j].update_cell_dendritePermanences(dendrite_idx=dendrite_idx,
+                                                                       prev_state=prev_state,
+                                                                       decay_only=True)
+        
+        return
+
         
     def prune_net_permanences(self):
         """

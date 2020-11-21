@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
+import random
 
-from ufuncs import dot_prod
+from ufuncs import dot_prod, get_idx_nonZeroElements
 
 class HTM_CELL():
     
@@ -11,7 +12,8 @@ class HTM_CELL():
     
     def __init__(self, cellsPerColumn=None, numColumns=None, 
                  maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
-                 nmdaThreshold=None, permThreshold=None, permInit=None, permInit_sd=None):
+                 nmdaThreshold=None, permThreshold=None, permInit=None, permInit_sd=None,
+                 perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None):
         
         self.M = cellsPerColumn
         self.N = numColumns 
@@ -23,6 +25,11 @@ class HTM_CELL():
         self.permThreshold = permThreshold
         self.permInit = permInit
         self.permInit_sd = permInit_sd
+        
+        self.perm_decrement = perm_decrement
+        self.perm_increment = perm_increment
+        self.perm_decay = perm_decay
+        self.perm_boost = perm_boost
         
         # list containing the (numpy array) MxN matrices of potential synapses (permanence values) for each dendrite
         # of the HTM cell; shape: (<maxDendritesPerCell>,M,N). There are NO dendrites initially.
@@ -80,15 +87,30 @@ class HTM_CELL():
     
     def grow_cell_newSynapsesOnDendrite(self, dendrite_idx=None, prev_winnerCells=None):
         
+        list_prev_WinnerCells_idx = get_idx_nonZeroElements(prev_winnerCells)
         newSynapsesCapacity = self.maxSynapsesPerDendrite - self.get_cell_numSynapsesOnDendrite(dendrite_idx)
         
-        
-        
+        while len(list_prev_WinnerCells_idx)>0 and newSynapsesCapacity>0:
+            preSynapticWinnerCell = random.choice(list_prev_WinnerCells_idx)
+            list_prev_WinnerCells_idx.remove(preSynapticWinnerCell)
+            
+            # If there is no synapse existing between 'preSynapticWinnerCell' and the 'dendrite_idx',
+            # create one synapse!
+            if self.dendrites[dendrite_idx][preSynapticWinnerCell] == 0:
+                self.dendrites[dendrite_idx][preSynapticWinnerCell] == np.random.normal(loc=self.permInit, 
+                                                                                        scale=self.permInit_sd)
+                newSynapsesCapacity -= 1
+    
         return
     
     
-    def update_cell_dendritePermanences(self, dendrite_idx=None, prev_state=None):
+    def update_cell_dendritePermanences(self, dendrite_idx=None, prev_state=None, decay_only=False):
         
+        if decay_only is False:
+            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] + self.perm_increment*prev_state - self.perm_decrement
+        
+        else:
+            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] - self.perm_decay*prev_state
         
         return
     
@@ -128,9 +150,12 @@ class HTM_CELL():
 
         # 'dendritesSpikes' will be a list containing <maxDendritesPerCell> elements,
         # either 'None' if the dendrites have NO synapses; OR, a boolean value.
-        dendritesSpikes = []        
+        dendritesSpikes = [] 
+        
         cell_predictivity = False
-        predDendrites = None
+        predDendrites = None # stores the indices of all dendrites that led to the prediction
+                             # of the cell.
+                             
         cell_connectedSynapses = self.get_cell_connectedSynapses() 
                 
         for dendrite in cell_connectedSynapses:
@@ -144,8 +169,8 @@ class HTM_CELL():
         if any(dendritesSpikes):
             cell_predictivity = True
             predDendrites = np.where(dendritesSpikes)[0] # 1D numpy array of max. possible length 
-                                                         # <maxDendritesPerCell>.
-                                                        
+                                                         # <maxDendritesPerCell>, with integer entries
+                                                         # between 0 and <maxDendritesPerCell>-1.                          
         return cell_predictivity, predDendrites
     
      
