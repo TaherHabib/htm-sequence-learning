@@ -124,8 +124,8 @@ class Experimentor():
             
             htm_states=[]
             htm_preds=[]
-            htm_preds_dend=[]
-            htm_winner_cells=[]
+            htm_predDendrites=[]
+            htm_winnerCells=[]
             htm_net_ = copy.deepcopy(self.htm_network.get_NETWORK(char_minicols='all'))
             
             in_string = self.list_in_strings[string_idx]
@@ -142,12 +142,12 @@ class Experimentor():
                 
                 htm_states.append(curr_state)
                 htm_preds.append(curr_pred)
-                htm_preds_dend.append(curr_pred_dend)
+                htm_predDendrites.append(curr_pred_dend)
                 
                 if step == 0:
                 
-                    winner_cells = self.A_winner_cells
-                    htm_winner_cells.append(winner_cells)
+                    winnerCells = self.A_winner_cells
+                    htm_winnerCells.append(winnerCells)
                     
                     # No learning can occur for 'A' and its prediction. 
                     continue
@@ -158,13 +158,13 @@ class Experimentor():
                     
                     # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
                     # Here, the network is learning to predict for symbol that is currrently in 'in_string[step]'
-                    winner_cells, multiCellMaxOverlap = self.htm_network.update_net_synapticPermanences(curr_state=curr_state,
+                    winnerCells, multiCellMaxOverlap = self.htm_network.update_net_synapticPermanences(curr_state=curr_state,
                                                                                             prev_state=htm_states[step-1],
                                                                                             prev_pred=htm_preds[step-1], 
-                                                                                            prev_predDendrites=htm_preds_dend[step-1],
-                                                                                            prev_winnerCells=htm_winner_cells[step-1]
+                                                                                            prev_predDendrites=htm_predDendrites[step-1],
+                                                                                            prev_winnerCells=htm_winnerCells[step-1]
                                                                                             )
-                    htm_winner_cells.append(winner_cells)
+                    htm_winnerCells.append(winnerCells)
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=in_string[step]))
                     
                     if multiCellMaxOverlap == True:
@@ -188,8 +188,8 @@ class Experimentor():
                     _, multiCellMaxOverlap =self.htm_network.update_net_synapticPermanences(curr_state=curr_state, 
                                                                                            prev_state=htm_states[step],
                                                                                            prev_pred=htm_preds[step], 
-                                                                                           prev_predDendrites=htm_preds_dend[step],
-                                                                                           prev_winnerCells=htm_winner_cells[step]
+                                                                                           prev_predDendrites=htm_predDendrites[step],
+                                                                                           prev_winnerCells=htm_winnerCells[step]
                                                                                            )
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=self.z_minicols))
                     
@@ -200,8 +200,8 @@ class Experimentor():
             df_res.loc[string_idx] = [in_string_alpha, 
                                       np.array(htm_states), 
                                       np.array(htm_preds), 
-                                      np.array(htm_preds_dend),
-                                      np.array(htm_winner_cells),
+                                      np.array(htm_predDendrites),
+                                      np.array(htm_winnerCells),
                                       htm_net_]
             
             # np.array(htm_states) is numpy array of shape: (<len(in_string)>+1,M,N)

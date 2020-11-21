@@ -218,8 +218,8 @@ class HTM_NET():
         if len(otherPredicted_cols) != 0:
             self.case_net_reinforcePredictedColumns(otherPredictedCols=otherPredicted_cols,
                                                     prev_state=prev_state,
-                                                                                            prev_pred=prev_pred,
-                                                                                            prev_predDendrites=prev_predDendrites)
+                                                    prev_pred=prev_pred,
+                                                    prev_predDendrites=prev_predDendrites)
         
         #_______________________BOOSTING_______________________________________
         
@@ -375,6 +375,25 @@ class HTM_NET():
     
     def case_net_decayPredictedColumns(self, otherPredictedCols=None, prev_state=None,
                                        prev_pred=None, prev_predDendrites=None):
+        """
+        
+
+        Parameters
+        ----------
+        otherPredictedCols : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_state : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_pred : TYPE, optional
+            DESCRIPTION. The default is None.
+        prev_predDendrites : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """ 
         
         for j in otherPredictedCols:
             
