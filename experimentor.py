@@ -26,7 +26,6 @@ import pandas as pd
 import copy
 import random
 
-#from htm_cell import HTM_CELL
 from htm_net_v2 import HTM_NET
 from rebergrammar_generator import *
 
@@ -126,7 +125,7 @@ class Experimentor():
             htm_preds=[]
             htm_predDendrites=[]
             htm_winnerCells=[]
-            htm_net_ = copy.deepcopy(self.htm_network.get_NETWORK(char_minicols='all'))
+            htm_net_ = copy.deepcopy(self.htm_network.get_NETWORK(char_onehot='all'))
             
             in_string = self.list_in_strings[string_idx]
             in_string_alpha = self.in_strings_alpha[string_idx]    
@@ -137,7 +136,7 @@ class Experimentor():
             for step in range(len(in_string)):
                 
                 # in_string[step] is a binary 1xN vector (np.array) with 'k' 1s.
-                curr_state, curr_pred, curr_pred_dend = self.htm_network.get_net_state(prev_pred=curr_pred,
+                curr_state, curr_pred, curr_pred_dend  = self.htm_network.get_net_state(prev_pred=curr_pred,
                                                                                        curr_input=in_string[step])
                 
                 htm_states.append(curr_state)
@@ -218,7 +217,16 @@ class Experimentor():
         return dict_results
     
         
-            
+    def compute_deadCells(self):
+        
+        
+        list_net_cellDutyCycle.append(curr_state+curr_pred)
+        
+        if len(list_net_cellDutyCycle) > 1000:
+            net_cellDutyCycle = np.zeros([self.M, self.N])
+            for step in range(len(list_net_cellDutyCycle)):
+                net_cellDutyCycle += list_net_cellDutyCycle[step]
+                   
         
             
 # ================================NOTES=======================================

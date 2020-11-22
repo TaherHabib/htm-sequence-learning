@@ -25,8 +25,8 @@ import numpy as np
 import pandas as pd
 import random 
 
-from htm_cell import HTM_CELL
-from ufuncs import dot_prod
+from htm_cell_v2 import HTM_CELL
+from ufuncs import dot_prod, get_idx_nonZeroElements
 
 
 class HTM_NET():
@@ -50,6 +50,8 @@ class HTM_NET():
                 self.net_arch[i,j] = HTM_CELL(self.M, self.N, self.maxDendritesPerCell, self.maxSynapsesPerDendrite,
                                               nmdaThreshold, permThreshold, permInit, permInit_sd,
                                               perm_decrement, perm_increment, perm_decay, perm_boost)        
+        self.net_deadCells = []
+        
         return
     
     
@@ -160,8 +162,6 @@ class HTM_NET():
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
         curr_pred, curr_predDendrites = self.get_net_oneStepPrediction(curr_state)
         
-        # TODO: UPDATE TO THE DUTY CYCLES OF CELLS
-        
         return curr_state, curr_pred, curr_predDendrites
     
     
@@ -211,25 +211,21 @@ class HTM_NET():
         
         #_______________________CASE III_______________________________________
         
-        # When a column IS WRONGLY PREDICTED (can have more than 1 predicted 
+        # When a column IS Otherwise PREDICTED (can have more than 1 predicted 
         # cells)
         # ---------------------------------------------------------------------
         
         if len(otherPredicted_cols) != 0:
-            self.case_net_reinforcePredictedColumns(otherPredictedCols=otherPredicted_cols,
-                                                    prev_state=prev_state,
-                                                    prev_pred=prev_pred,
-                                                    prev_predDendrites=prev_predDendrites)
-        
-        #_______________________BOOSTING_______________________________________
-        
-        # Boosting of all the synaptic permanence values of all the cells with 
-        # low activity and/or predictivity.
-        # ---------------------------------------------------------------------
+            self.case_net_decayPredictedColumns(otherPredictedCols=otherPredicted_cols,
+                                                prev_state=prev_state,
+                                                prev_pred=prev_pred,
+                                                prev_predDendrites=prev_predDendrites)
         
         
-        # TODO: Compute 'winnerCells' (MxN) matrix
-        winnerCells = None
+        winnerCells = np.zeros([self.M, self.N], dtype=np.int8)
+        
+        for cell_idx in (burstColumns_winnerCells + reinforcePredictedColumns_winnerCells):
+            winnerCells[cell_idx] = 1
         
         
         return winnerCells, multiCellMaxOverlap
@@ -266,6 +262,7 @@ class HTM_NET():
             bestMatchingCellDendrite = (None, None)
             cells_numUnusedDendrites = [] # this will be an array of <M> elements with integer entries
                                           # between 0 and <maxDendritesPerCell>.
+            #--------------------------------------------------------------------------------------------------------------------
             for i in range(self.M):
                 
                 cells_numUnusedDendrites.append(self.net_arch[i,j].get_cell_numUnusedDendrites())
@@ -286,8 +283,11 @@ class HTM_NET():
                     
                             maxOverlapScore = cell_dendriteOverlap
                             bestMatchingCellDendrite = (i, dendrite_idx)                
+            #--------------------------------------------------------------------------------------------------------------------
                 
-            # If NO best matching dendrite is found, grow a new one on least used cell in the column.
+            #__________CASE: NO MATCHING DENDRITE IS FOUND_____________________
+            
+            # Grow a new one on least used cell in the column.
             if bestMatchingCellDendrite[0] is None:
                 
                 # Checking for the condition where all <maxDendritesPerCell> dendrtes
@@ -302,29 +302,39 @@ class HTM_NET():
                     
                     winner_cells.append((cellIdx_leastUsedCell, j))
                     
-                
-            # Else select the best matching cell and dendrite for learning, i.e.,
-            # Reinforce connections with active cells in 'prev_state' and punish all other 
-            # synaptic connections.
+            #__________CASE: MATCHING DENDRITE FOUND___________________________    
+            
             else:
+                # Reinforce connections with active cells in 'prev_state' and punish all other 
+                # synaptic connections.
                 self.net_arch[bestMatchingCellDendrite[0], j].update_cell_dendritePermanences(dendrite_idx=bestMatchingCellDendrite[1],
                                                                                               prev_state=prev_state)
                 winner_cells.append((bestMatchingCellDendrite[0], j))
                 
-                # Growing new synapses to a subset of the previous timestep's winner cells
-                # ONLY when there is a capacity on the dendrite to grow new synapses.                
+                #________Growing New Synapses To 'prev_winnerCells'____________
+                # 1. When there is capacity on dendrite to grow new synapses.
                 if self.net_arch[bestMatchingCellDendrite[0], j].get_cell_numSynapsesOnDendrite(bestMatchingCellDendrite[1]) < self.maxSynapsesPerDendrite:
                     self.net_arch[bestMatchingCellDendrite[0], j].grow_cell_newSynapsesOnDendrite(dendrite_idx=bestMatchingCellDendrite[1],
                                                                                                   prev_winnerCells=prev_winnerCells)
+                # 2. When the dendrite has NO capacity to grow new synapses.
                 else:
-                    if np.amax(cells_numUnusedDendrites) == 0:
-                        print(f'Issue 002 encountered! For column: {j}')
-                    else:
-                        cellIdx_leastUsedCell = random.choice(np.where(cells_numUnusedDendrites == np.amax(cells_numUnusedDendrites))[0])
-                        self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(prev_winnerCells)               
-                        
-                        winner_cells.remove((bestMatchingCellDendrite[0], j))
-                        winner_cells.append((cellIdx_leastUsedCell, j))
+                    # Check if there is a significant overlap between the reinforced
+                    # synapses from above and 'prev_winnerCells'. If the overlap is less 
+                    # than the cell's NMDA threshold, then grow a new dendrite, else do not!
+                    list_reinforcedSynapses = get_idx_nonZeroElements(self.net_arch[bestMatchingCellDendrite[0], j].dendrites[bestMatchingCellDendrite[1]]*prev_state)
+                    list_prev_winnerCells = get_idx_nonZeroElements(prev_winnerCells)
+                    
+                    num_overlapCellIdx = len(set(list_reinforcedSynapses).intersection(list_prev_winnerCells))
+                    
+                    if num_overlapCellIdx < self.net_arch[bestMatchingCellDendrite[0], j].nmdaThreshold:
+                        if np.amax(cells_numUnusedDendrites) == 0:
+                            print(f'Issue 002 encountered! For column: {j}')
+                        else:
+                            cellIdx_leastUsedCell = random.choice(np.where(cells_numUnusedDendrites == np.amax(cells_numUnusedDendrites))[0])
+                            self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(prev_winnerCells)               
+                                
+                            winner_cells.remove((bestMatchingCellDendrite[0], j))
+                            winner_cells.append((cellIdx_leastUsedCell, j))
         
         return winner_cells, multiCellMaxOverlap            
                     
@@ -440,7 +450,7 @@ class HTM_NET():
         return None
     
     
-    def get_NETWORK(self, char_minicols='all'):
+    def get_NETWORK(self, char_onehot='all'):
         """
         Returns the network architecture – MxN matrix of HTM_CELLs
 
@@ -450,11 +460,11 @@ class HTM_NET():
         
         """
         
-        if char_minicols == 'all':
+        if char_onehot == 'all':
             return  self.net_arch
         
         else:
-            return self.net_arch[:, np.where(char_minicols)[0]]
+            return self.net_arch[:, np.where(char_onehot)[0]]
         
 
     def get_net_dims(self):

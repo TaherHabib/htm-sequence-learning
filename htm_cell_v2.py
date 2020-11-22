@@ -1,3 +1,10 @@
+"""
+FILE DESCRIPTION:
+------------------------
+
+    
+"""
+
 import numpy as np
 import pandas as pd
 import random
@@ -5,10 +12,6 @@ import random
 from ufuncs import dot_prod, get_idx_nonZeroElements
 
 class HTM_CELL():
-    
-    """
-    
-    """
     
     def __init__(self, cellsPerColumn=None, numColumns=None, 
                  maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
