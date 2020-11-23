@@ -109,11 +109,11 @@ class HTM_CELL():
     
     def update_cell_dendritePermanences(self, dendrite_idx=None, prev_state=None, decay_only=False):
         
-        if decay_only is False:
-            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] + self.perm_increment*prev_state - self.perm_decrement
+        if decay_only:
+            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] - self.perm_decay*prev_state
         
         else:
-            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] - self.perm_decay*prev_state
+            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] + self.perm_increment*prev_state - self.perm_decrement
         
         return
     

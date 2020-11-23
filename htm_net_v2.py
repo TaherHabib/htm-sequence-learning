@@ -160,7 +160,7 @@ class HTM_NET():
                 curr_state[:,j] -= 1 
                 
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
-        curr_pred, curr_predDendrites = self.get_net_oneStepPrediction(curr_state)
+        curr_pred, curr_predDendrites = self.get_net_oneStepPrediction(curr_state)        
         
         return curr_state, curr_pred, curr_predDendrites
     
@@ -368,12 +368,10 @@ class HTM_NET():
             
             # extract the i-indices of all the CORRECTLY predicted cells in the column
             cells_i = np.where(prev_pred[:,j])[0]
-            
             # Reinforce the active dendrites for all of the predicted cells in the minicolumn.
             for i in cells_i:
                 
                 winner_cells.append((i,j))
-                
                 # for indices of all dendrites that led to cell's prediction.
                 for dendrite_idx in prev_predDendrites[(i,j)]:
                     
@@ -409,7 +407,6 @@ class HTM_NET():
             
             # extract the i-indices of all the OTHER predicted cells in the column
             cells_i = np.where(prev_pred[:,j])[0]
-            
             # Punish the active dendrites for all of the OTHER predicted cells in the minicolumn.
             for i in cells_i:
                 
@@ -494,4 +491,16 @@ class HTM_NET():
 # random.shuffle(minicolumns)
 # for i in range(self.N//self.k):
 #     mc = minicolumns[i*self.k:(i+1)*self.k]
+# =============================================================================
+
+# =============================================================================
+#     def compute_deadCells(self):
+#         
+#         
+#         list_net_cellDutyCycle.append(curr_state+curr_pred)
+#         
+#         if len(list_net_cellDutyCycle) > 1000:
+#             net_cellDutyCycle = np.zeros([self.M, self.N])
+#             for step in range(len(list_net_cellDutyCycle)):
+#                 net_cellDutyCycle += list_net_cellDutyCycle[step]      
 # =============================================================================

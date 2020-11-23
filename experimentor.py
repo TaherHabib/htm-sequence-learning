@@ -60,7 +60,7 @@ class Experimentor():
         self.nof_strings = nof_strings
     
         # Initializing Grammar
-        self.rg = Reber_Grammar(numColumns=numColumns, columnsPerChar=columnsPerChar)
+        self.rg = Reber_Grammar(numColumns=self.N, columnsPerChar=self.k)
         self.df_CharsToMinicols = self.rg.df_CharsToMinicols
         
         # Onehot for 'Z'
@@ -125,6 +125,7 @@ class Experimentor():
             htm_preds=[]
             htm_predDendrites=[]
             htm_winnerCells=[]
+            
             htm_net_ = copy.deepcopy(self.htm_network.get_NETWORK(char_onehot='all'))
             
             in_string = self.list_in_strings[string_idx]
@@ -137,8 +138,7 @@ class Experimentor():
                 
                 # in_string[step] is a binary 1xN vector (np.array) with 'k' 1s.
                 curr_state, curr_pred, curr_pred_dend  = self.htm_network.get_net_state(prev_pred=curr_pred,
-                                                                                       curr_input=in_string[step])
-                
+                                                                                        curr_input=in_string[step])
                 htm_states.append(curr_state)
                 htm_preds.append(curr_pred)
                 htm_predDendrites.append(curr_pred_dend)
@@ -216,17 +216,6 @@ class Experimentor():
         
         return dict_results
     
-        
-    def compute_deadCells(self):
-        
-        
-        list_net_cellDutyCycle.append(curr_state+curr_pred)
-        
-        if len(list_net_cellDutyCycle) > 1000:
-            net_cellDutyCycle = np.zeros([self.M, self.N])
-            for step in range(len(list_net_cellDutyCycle)):
-                net_cellDutyCycle += list_net_cellDutyCycle[step]
-                   
         
             
 # ================================NOTES=======================================
