@@ -127,6 +127,8 @@ class Experimentor():
             # due to the final ommission of 'Z'.
             for step in range(len(in_string)):
                 
+                print(color.BLUE,'Running for step: ', step, ' for: ', in_string_alpha[step], color.END)
+                
                 # in_string[step] is a binary 1xN vector (np.array) with 'k' 1s.
                 curr_state, curr_pred, curr_pred_dend  = self.htm_network.get_net_state(prev_pred=curr_pred,
                                                                                         curr_input=in_string[step])
@@ -148,21 +150,19 @@ class Experimentor():
                     
                     # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
                     # Here, the network is learning to predict for symbol that is currrently in 'in_string[step]'
-                    winnerCells, multiCellMaxOverlap = self.htm_network.update_net_synapticPermanences(curr_state=curr_state,
-                                                                                            prev_state=htm_states[step-1],
-                                                                                            prev_pred=htm_preds[step-1], 
-                                                                                            prev_predDendrites=htm_predDendrites[step-1],
-                                                                                            prev_winnerCells=htm_winnerCells[step-1]
-                                                                                            )
+                    winnerCells = self.htm_network.update_net_synapticPermanences(curr_state=curr_state,
+                                                                                  prev_state=htm_states[step-1],
+                                                                                  prev_pred=htm_preds[step-1], 
+                                                                                  prev_predDendrites=htm_predDendrites[step-1],
+                                                                                  prev_winnerCells=htm_winnerCells[step-1]
+                                                                                  )
                     htm_winnerCells.append(winnerCells)
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=in_string[step]))
-                    
-                    if multiCellMaxOverlap == True:
-                        print(color.RED,'Issue 003 in String at step: ', step, ' for: ', in_string_alpha[step], color.END)
-                    
                 
                 # LEARNING TO PREDICT 'Z' at the penultimate step
                 if step == len(in_string)-1:
+                    
+                    print(color.BLUE,'Running for step: ', step + 1, ' for: Z', color.END)
                     
                     curr_state, _, _ = self.htm_network.get_net_state(prev_pred=curr_pred,
                                                                       curr_input=self.z_onehot)
@@ -175,16 +175,14 @@ class Experimentor():
                 
                     self.htm_network.prune_net_permanences()
                     
-                    _, multiCellMaxOverlap = self.htm_network.update_net_synapticPermanences(curr_state=curr_state, 
-                                                                                           prev_state=htm_states[step],
-                                                                                           prev_pred=htm_preds[step], 
-                                                                                           prev_predDendrites=htm_predDendrites[step],
-                                                                                           prev_winnerCells=htm_winnerCells[step]
-                                                                                           )
+                    _ = self.htm_network.update_net_synapticPermanences(curr_state=curr_state,
+                                                                        prev_state=htm_states[step],
+                                                                        prev_pred=htm_preds[step], 
+                                                                        prev_predDendrites=htm_predDendrites[step],
+                                                                        prev_winnerCells=htm_winnerCells[step]
+                                                                        )
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=self.z_minicols))
                     
-                    if multiCellMaxOverlap == True:
-                        print(color.RED,'Issue 003 in String at: Z.', color.END)
                         
                     self.htm_network.prune_net_permanences()
             

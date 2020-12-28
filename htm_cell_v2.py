@@ -55,10 +55,23 @@ class HTM_CELL():
         return numDendrites
     
     
+    def get_cell_numUnusedDendrites(self):
+        
+        num_UnusedDendrites = 0
+        
+        for dendrite in self.dendrites:
+            if dendrite is None:
+                num_UnusedDendrites += 1
+            else:
+                continue
+        
+        return num_UnusedDendrites
+    
+    
     def get_cell_numSynapsesOnDendrite(self, dendrite_idx=None):
         
         return np.count_nonzero(self.dendrites[dendrite_idx])
-    
+
     
     def grow_cell_newDendrite(self, prev_winnerCells=None):
         
@@ -75,6 +88,7 @@ class HTM_CELL():
         for i in range(self.maxDendritesPerCell):
             if self.dendrites[i] is None:
                 newDendrite_idx = i
+                self.dendrites[newDendrite_idx] = newDendrite
                 break
             else:
                 continue
@@ -82,10 +96,7 @@ class HTM_CELL():
         if newDendrite_idx is None:
             print('Cell Capacity is FULL! :(')
         
-        else:
-            self.dendrites[newDendrite_idx] = newDendrite
-
-        return
+        return newDendrite_idx
     
     
     def grow_cell_newSynapsesOnDendrite(self, dendrite_idx=None, prev_winnerCells=None):
@@ -99,23 +110,29 @@ class HTM_CELL():
             
             # If there is no synapse existing between 'preSynapticWinnerCell' and the 'dendrite_idx',
             # create one synapse!
-            if self.dendrites[dendrite_idx][preSynapticWinnerCell] == 0:
+            if self.dendrites[dendrite_idx][preSynapticWinnerCell] == 0.0:
                 self.dendrites[dendrite_idx][preSynapticWinnerCell] == np.random.normal(loc=self.permInit, 
                                                                                         scale=self.permInit_sd)
                 newSynapsesCapacity -= 1
     
-        return
+        return self.get_cell_numSynapsesOnDendrite(dendrite_idx)
     
     
     def update_cell_dendritePermanences(self, dendrite_idx=None, prev_state=None, decay_only=False):
         
+        prev_state_ = (self.dendrites[dendrite_idx]*prev_state)>0
+        prev_state_ = prev_state_.astype(int)
+            
         if decay_only:
-            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] - self.perm_decay*prev_state
+            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] - self.perm_decay*prev_state_
         
         else:
-            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] + self.perm_increment*prev_state - self.perm_decrement
+            self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] + self.perm_increment*prev_state_ - self.perm_decrement
+            
+        # Pruning Negative Permanence values
+        self.dendrites[dendrite_idx][self.dendrites[dendrite_idx] < 0] = 0.0
         
-        return
+        return np.count_nonzero(prev_state_), self.get_cell_numSynapsesOnDendrite(dendrite_idx)
     
     
     def get_cell_connectedSynapses(self):
@@ -135,7 +152,7 @@ class HTM_CELL():
         return np.array(cell_connectedSynapses, dtype=object) # numpy array of length <maxDendritesPerCell> of either 
                                                               # 'None' elements or MxN (numpy) boolean matrices.        
                     
-    def get_cell_predicitivity(self, net_state=None):
+    def get_cell_predictivity(self, net_state=None):
         """
         Checks if the cell is in a predictive state, given the current 
         timestep's network activity.
@@ -175,19 +192,6 @@ class HTM_CELL():
                                                          # <maxDendritesPerCell>, with integer entries
                                                          # between 0 and <maxDendritesPerCell>-1.                          
         return cell_predictivity, predDendrites
-    
-     
-    def get_cell_numUnusedDendrites(self):
-        
-        num_UnusedDendrites = 0
-        
-        for dendrite in self.dendrites:
-            if dendrite is None:
-                num_UnusedDendrites += 1
-            else:
-                continue
-        
-        return num_UnusedDendrites
     
     
     def get_cell_allDendrites(self):

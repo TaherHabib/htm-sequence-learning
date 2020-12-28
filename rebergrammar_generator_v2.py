@@ -8,6 +8,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 
+from ufuncs import reberstring_length 
+
 
 chars='ATSXPVZ'
 embedded_chars = 'TP'
@@ -315,24 +317,17 @@ class Reber_Grammar():
         return ergIO
     
     
-    def generate_RGInputOuput(self, do_ERG, 
-                              nof_strings, nof_uniqueStrings, nof_copies_uniqueStrings,
-                              sort_by_length):
+    def generate_RGInputOutput(self, do_ERG, 
+                               nof_strings, nof_uniqueStrings, nof_copies_uniqueStrings,
+                               sort_by_length):
         
         if do_ERG:
             if nof_uniqueStrings == 'mix' and not sort_by_length:
                 rg_inputoutput = self.get_n_erg(nof_strings)
             
             elif nof_uniqueStrings == 'mix' and sort_by_length:
-                bagOfInputStrings = self.get_n_erg(nof_strings)
-                required_inputReberStrings = sorted([bagOfInputStrings[i][0] for i in range(nof_strings)], key=len)
+                rg_inputoutput = sorted(self.get_n_erg(nof_strings), key=reberstring_length)
                 
-                rg_inputoutput=[]
-                for string in required_inputReberStrings:
-                    for i in range(nof_strings):
-                        if bagOfInputStrings[i][0] == string:
-                            rg_inputoutput.append(bagOfInputStrings[i])
-            
             else:
                 bagOfInputStrings = self.get_n_erg(2000)
                 if sort_by_length:
@@ -353,15 +348,8 @@ class Reber_Grammar():
                 rg_inputoutput = self.get_n_srg(nof_strings)
             
             elif nof_uniqueStrings == 'mix' and sort_by_length:
-                bagOfInputStrings = self.get_n_srg(nof_strings)
-                required_inputReberStrings = sorted([bagOfInputStrings[i][0] for i in range(nof_strings)], key=len)
+                rg_inputoutput = sorted(self.get_n_srg(nof_strings), key=reberstring_length)
                 
-                rg_inputoutput=[]
-                for string in required_inputReberStrings:
-                    for i in range(nof_strings):
-                        if bagOfInputStrings[i][0] == string:
-                            rg_inputoutput.append(bagOfInputStrings[i])
-            
             else:
                 bagOfInputStrings = self.get_n_srg(2000)
                 if sort_by_length:

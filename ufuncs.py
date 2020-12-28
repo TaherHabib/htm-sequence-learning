@@ -69,6 +69,9 @@ def get_idx_nonZeroElements(matrix=None):
     
     return list_idx_nonZeroElements
 
+def reberstring_length(rg_io):
+    
+    return len(rg_io[0])
 
 
 def false_match_prob(k=None,tot_neurons=None,connSynapses_perdend=None,nmda_threshold=None):
