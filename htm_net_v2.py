@@ -18,6 +18,11 @@ Issue 002:
 Issue 003:
     When in a bursting column, a maximum overlap with the previous active cells of the network is found at two different
     places – either on different cells in a column, or on different dendrites of the same cell in that column.
+
+Issue 004:
+    
+Issue 005:
+    
     
 """
 
@@ -43,7 +48,9 @@ class HTM_NET():
         
         self.maxDendritesPerCell = maxDendritesPerCell
         self.maxSynapsesPerDendrite = maxSynapsesPerDendrite 
-        # max. number of CONNECTED synapses on a single dendritic segment.        
+        # max. number of CONNECTED synapses on a single dendritic segment.
+        
+        self.nmdaThreshold = nmdaThreshold        
         
         #______________________________________________________________________
         # Initializing every cell in the network, i.e. setting up the dendrites 
@@ -324,7 +331,7 @@ class HTM_NET():
                 # Checking for the condition where all <maxDendritesPerCell> 
                 # dendrtes are used on every cell and still NO Match was found.
                 if np.amax(cells_numUnusedDendrites) == 0:
-                    print(f'Issue 001 encountered! For column: {j}')  
+                    print(color.RED, 'Issue 001 enct. in col: ', j, color.END)
                 else:
                     # Select randomly one cell from the set of all cells with 
                     # equal number of UnusedDendrites
@@ -332,10 +339,10 @@ class HTM_NET():
                     # Grow a new dendrite on this cell with connections to 
                     # 'prev_WinnerCells'
                     newDendrite_idx = self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(prev_winnerCells)               
-                    print(color.GREEN, 'NO MATCH FOUND. Growing new Dendrite with ', \
-                          self.net_arch[cellIdx_leastUsedCell, j].get_cell_numSynapsesOnDendrite(newDendrite_idx),' synapses.', \
-                          color.END)
-                    
+                    print(color.GREEN, 'NO MATCH FOUND. Growing ', \
+                          self.net_arch[cellIdx_leastUsedCell, j].get_cell_numSynapsesOnDendrite(newDendrite_idx), \
+                          ' new synapses on cell {', cellIdx_leastUsedCell, j,'}; dendrite: ', newDendrite_idx, color.END)
+                          
                     winner_cells.append((cellIdx_leastUsedCell, j))
                     
             
@@ -347,46 +354,94 @@ class HTM_NET():
                 # Due to the previous restriction of having at least 7 matching
                 # synapses for a dendritic segment to be counted as 'bestMatch',
                 # AT LEAST 7 synapses will be reinforced at any given timestep.
-                numSynapses_reinforced, total_numSynapses = self.net_arch[bestMatch_CellDendrite[0], j].update_cell_dendritePermanences(dendrite_idx=bestMatch_CellDendrite[1],
-                                                                                                                                        prev_state=prev_state)
-                print(color.GREEN, 'MATCH FOUND. OverlapScore: ', bestMatch_Score, '. Reinforcing ', numSynapses_reinforced, \
-                      ' synapses on dendrite with ', total_numSynapses, ' existing synapses.', \
-                      color.END)
+                reinforcedSynapses, tot_numSynapses = self.net_arch[bestMatch_CellDendrite[0], j].update_cell_dendritePermanences(dendrite_idx=bestMatch_CellDendrite[1],
+                                                                                                                                  prev_state=prev_state)
+                print(color.GREEN, 'MATCH FOUND. Cell {', bestMatch_CellDendrite[0],',',j,'}; dendrite: ',bestMatch_CellDendrite[1], \
+                      '. OverlapScore: ', bestMatch_Score, \
+                      '. Reinforcing ', np.count_nonzero(reinforcedSynapses),' synapses. Existing synapses= ', tot_numSynapses, color.END)
                 
                 winner_cells.append((bestMatch_CellDendrite[0], j))
                 
+                bestMatch_dendriteCapacity = self.maxSynapsesPerDendrite - self.net_arch[bestMatch_CellDendrite[0], j].get_cell_numSynapsesOnDendrite(bestMatch_CellDendrite[1])
+                if bestMatch_dendriteCapacity < 0:
+                    print(color.RED, 'Issue 004 enct. in cell {', bestMatch_CellDendrite[0],',',j,'}; dendrite: ',bestMatch_CellDendrite[1], color.END)
+                
                 #________Growing New Synapses To 'prev_winnerCells'____________
                 
-                # 1. When there is capacity on dendrite to grow new synapses.
-                if self.net_arch[bestMatch_CellDendrite[0], j].get_cell_numSynapsesOnDendrite(bestMatch_CellDendrite[1]) < self.maxSynapsesPerDendrite:
-                    total_numSynapses = self.net_arch[bestMatch_CellDendrite[0], j].grow_cell_newSynapsesOnDendrite(dendrite_idx=bestMatch_CellDendrite[1],
+                # Check if ... #TODO
+                list_reinforcedSynapses = get_idx_nonZeroElements(reinforcedSynapses)
+                # will have at least 7 elements
+                list_prev_winnerCells = get_idx_nonZeroElements(prev_winnerCells)
+                
+                intersection_reinforcedPrevWinners = set(list_reinforcedSynapses).intersection(list_prev_winnerCells)
+                newSynapsesToGrow = set(list_prev_winnerCells) - intersection_reinforcedPrevWinners
+                
+                if len(newSynapsesToGrow) > self.maxDendritesPerCell:
+                    print(color.RED, 'Issue 005 enct. in col: ', j, color.END)
+                    
+                remaining_winnerCells = np.zeros(shape=[self.M,self.N])
+                for i in newSynapsesToGrow:
+                    remaining_winnerCells[i] = 1
+                
+                # 1. When there is capacity on 'bestMatch' dendrite to grow
+                # new synapses.
+                if len(newSynapsesToGrow) <= bestMatch_dendriteCapacity:
+                    total_newSynapses = self.net_arch[bestMatch_CellDendrite[0], j].grow_cell_newSynapsesOnDendrite(dendrite_idx=bestMatch_CellDendrite[1],
                                                                                                                     prev_winnerCells=prev_winnerCells)
-                    print(color.PURPLE, 'Growing new Synapses on cell {',bestMatch_CellDendrite[0],',',j,'}; dendrite: ',bestMatch_CellDendrite[1], \
-                          '. Total Synapses after:', total_numSynapses, color.END)
-                    
-                # 2. When the dendrite has NO capacity to grow new synapses.
+                    print(color.PURPLE, 'Growing ', total_newSynapses,' new Synapses.', color.END)
+                
+                # 2. When the 'bestMatch' dendrite has NO capacity to grow new 
+                # synapses.
                 else:
-                    print(color.DARKCYAN,'Growing New Synapses on a New Dendrite', color.END)
-                    # Check if there is a significant overlap between the reinforced
-                    # synapses from above and 'prev_winnerCells'. If the overlap is less 
-                    # than the cell's NMDA threshold, then grow a new dendrite, else do not!
-                    list_reinforcedSynapses = get_idx_nonZeroElements(self.net_arch[bestMatch_CellDendrite[0], j].dendrites[bestMatch_CellDendrite[1]]*prev_state)
-                    list_prev_winnerCells = get_idx_nonZeroElements(prev_winnerCells)
+                
+                    # There are cases where due to the bursting of all columns 
+                    # in previous timestep, the 'reinforcedSynapses' (bestMatch) 
+                    # are different than the 'prev_WinnerCells' entirely i.e., 
+                    # the intersection set above might be empty. Therefore, it 
+                    # is required to check whether there are other existing 
+                    # dendrites in the minicolumn that have all the synaptic 
+                    # connections to 'newSynapsesToGrow'. 
+                    # If yes, then these existing synaptic connections are 
+                    # reinforced. 
+                    # Otherwise, a new Dendrite is grown to store 
+                    # 'remaining_winnerCells' pattern on a randomly chosen 
+                    # 'leastUsedCell'.                   
+                    cellDendrites_ = []    
+                    for i in range(self.M):
+                        for dendrite_idx in range(self.maxDendritesPerCell):
+                            if self.net_arch[i,j].dendrites[dendrite_idx] is None:
+                                continue
+                            else:
+                                existing_synapticPerm = get_idx_nonZeroElements(self.net_arch[i,j].dendrites[dendrite_idx])
+                                if newSynapsesToGrow - newSynapsesToGrow.intersection(existing_synapticPerm) == set():
+                                    cellDendrites_.append((i, dendrite_idx))
                     
-                    num_overlapCellIdx = len(set(list_reinforcedSynapses).intersection(list_prev_winnerCells))
-                    
-                    if num_overlapCellIdx < self.net_arch[bestMatch_CellDendrite[0], j].nmdaThreshold:                        
+                    if cellDendrites_ == []:
                         if np.amax(cells_numUnusedDendrites) == 0:
-                            print(f'Issue 002 encountered! For column: {j}')
+                            print(color.RED, 'Issue 002 enct. in col: ', j, color.END)
                         
                         else:
                             cellIdx_leastUsedCell = random.choice(np.where(cells_numUnusedDendrites == np.amax(cells_numUnusedDendrites))[0])
-                            newDendrite_idx = self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(prev_winnerCells)               
-                            print(color.DARKCYAN,'Growing New Synapses on cell {', cellIdx_leastUsedCell, j,'}; dendrite: ', newDendrite_idx, color.END)
+                            newDendrite_idx = self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(remaining_winnerCells)               
+                            print(color.PURPLE,'NO DENDRITIC CAPACITY AND EXISTING DENDRITE. Growing ', \
+                                  self.net_arch[cellIdx_leastUsedCell, j].get_cell_numSynapsesOnDendrite(newDendrite_idx), \
+                                  ' new synapses on cell {', cellIdx_leastUsedCell, j,'}; dendrite: ', newDendrite_idx, color.END)
                             
                             winner_cells.remove((bestMatch_CellDendrite[0], j))
                             winner_cells.append((cellIdx_leastUsedCell, j))
-        
+                            
+                    else:
+                        random.seed()
+                        cellDendrite_idx = random.choice(cellDendrites_)
+                        reinforcedSynapses_, _ = self.net_arch[cellDendrite_idx[0], j].update_cell_dendritePermanences(dendrite_idx=cellDendrite_idx[1],
+                                                                                                                       prev_state=remaining_winnerCells)
+                        print(color.PURPLE, 'NO DENDRITIC CAPACITY BUT EXISTING DENDRITE FOUND. Cell {', cellDendrite_idx[0],',',j,'}; dendrite: ',cellDendrite_idx[1], \
+                              '. Reinforcing ', np.count_nonzero(reinforcedSynapses_),' synapses.', color.END)
+                        
+                        winner_cells.remove((bestMatch_CellDendrite[0], j))
+                        winner_cells.append((cellDendrite_idx[0], j))
+                        
+                
         return winner_cells          
                 
         
@@ -397,18 +452,25 @@ class HTM_NET():
         
         for j in corrPredictedCols:
             
-            # extract the i-indices of all the CORRECTLY predicted cells in the column
+            # extract i-indices of all CORRECTLY predicted cells in the column
             cells_i = np.where(prev_pred[:,j])[0]
-            # Reinforce the active dendrites for all of the predicted cells in the minicolumn.
+            
+            #__________________________________________________________________
+            # Reinforce active dendrites for all of predicted cells in the 
+            # minicolumn.
             for i in cells_i:
                 
                 winner_cells.append((i,j))
                 # for indices of all dendrites that led to cell's prediction.
                 for dendrite_idx in prev_predDendrites[(i,j)]:
                     
-                    _, _ = self.net_arch[i,j].update_cell_dendritePermanences(dendrite_idx=dendrite_idx,
-                                                                       prev_state=prev_state)
-        
+                    reinforcedSynapses, tot_numSynapses = self.net_arch[i,j].update_cell_dendritePermanences(dendrite_idx=dendrite_idx,
+                                                                              prev_state=prev_state)
+                
+                    #print(color.DARKCYAN, 'CORRECT PRED. Cell {', i,',',j,'}; dendrite: ', dendrite_idx, \
+                     #     '. Reinforcing ', np.count_nonzero(reinforcedSynapses),' synapses. Existing synapses= ', tot_numSynapses, color.END)
+                
+                    
         return winner_cells
     
     
@@ -417,18 +479,21 @@ class HTM_NET():
         
         for j in otherPredictedCols:
             
-            # extract the i-indices of all the OTHER predicted cells in the column
+            # extract i-indices of all OTHER predicted cells in the column
             cells_i = np.where(prev_pred[:,j])[0]
-            # Punish the active dendrites for all of the OTHER predicted cells in the minicolumn.
+            
+            #__________________________________________________________________
+            # Punish active dendrites for all of OTHER predicted cells in the 
+            # minicolumn.
             for i in cells_i:
                 
                 # for indices of all dendrites that led to cell's prediction.
                 for dendrite_idx in prev_predDendrites[(i,j)]:
                     
                     _, _ = self.net_arch[i,j].update_cell_dendritePermanences(dendrite_idx=dendrite_idx,
-                                                                       prev_state=prev_state,
-                                                                       decay_only=True)
-        
+                                                                              prev_state=prev_state,
+                                                                              decay_only=True)                
+                
         return
 
         

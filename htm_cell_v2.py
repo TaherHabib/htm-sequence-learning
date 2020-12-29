@@ -58,7 +58,6 @@ class HTM_CELL():
     def get_cell_numUnusedDendrites(self):
         
         num_UnusedDendrites = 0
-        
         for dendrite in self.dendrites:
             if dendrite is None:
                 num_UnusedDendrites += 1
@@ -73,10 +72,15 @@ class HTM_CELL():
         return np.count_nonzero(self.dendrites[dendrite_idx])
 
     
-    def grow_cell_newDendrite(self, prev_winnerCells=None):
+    def grow_cell_newDendrite(self, prev_winnerCells=None, high_permInit=False):
         
-        newDendrite = np.array(np.random.normal(loc=self.permInit, scale=self.permInit_sd, size=[self.M, self.N]), 
-                               dtype=np.float64)
+        if high_permInit:
+            permInit_ = 0.8*(self.permThreshold-self.permInit) + self.permInit
+            newDendrite = np.array(np.random.normal(loc=permInit_, scale=self.permInit_sd, size=[self.M, self.N]),
+                                   dtype=np.float64)
+        else:
+            newDendrite = np.array(np.random.normal(loc=self.permInit, scale=self.permInit_sd, size=[self.M, self.N]),
+                                   dtype=np.float64)
         
         newDendrite = newDendrite*prev_winnerCells
         # 'newDendrite' will ONLY have connections (at permInit level) to 'presynaptic_WinnerCells'.
@@ -103,6 +107,7 @@ class HTM_CELL():
         
         list_prev_WinnerCells_idx = get_idx_nonZeroElements(prev_winnerCells)
         newSynapsesCapacity = self.maxSynapsesPerDendrite - self.get_cell_numSynapsesOnDendrite(dendrite_idx)
+        numNewSynapses = 0
         
         while len(list_prev_WinnerCells_idx)>0 and newSynapsesCapacity>0:
             preSynapticWinnerCell = random.choice(list_prev_WinnerCells_idx)
@@ -114,8 +119,9 @@ class HTM_CELL():
                 self.dendrites[dendrite_idx][preSynapticWinnerCell] == np.random.normal(loc=self.permInit, 
                                                                                         scale=self.permInit_sd)
                 newSynapsesCapacity -= 1
+                numNewSynapses += 1
     
-        return self.get_cell_numSynapsesOnDendrite(dendrite_idx)
+        return numNewSynapses
     
     
     def update_cell_dendritePermanences(self, dendrite_idx=None, prev_state=None, decay_only=False):
@@ -129,10 +135,13 @@ class HTM_CELL():
         else:
             self.dendrites[dendrite_idx] = self.dendrites[dendrite_idx] + self.perm_increment*prev_state_ - self.perm_decrement
             
-        # Pruning Negative Permanence values
+        # Pruning Negative Permanence values (setting to 0.0)
         self.dendrites[dendrite_idx][self.dendrites[dendrite_idx] < 0] = 0.0
         
-        return np.count_nonzero(prev_state_), self.get_cell_numSynapsesOnDendrite(dendrite_idx)
+        # Pruning Positive Permanence values (setting to 1.0)
+        self.dendrites[dendrite_idx][self.dendrites[dendrite_idx] > 1] = 1.0
+        
+        return prev_state_, self.get_cell_numSynapsesOnDendrite(dendrite_idx)
     
     
     def get_cell_connectedSynapses(self):
