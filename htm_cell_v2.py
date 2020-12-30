@@ -37,8 +37,7 @@ class HTM_CELL():
         # list containing the (numpy array) MxN matrices of potential synapses (permanence values) for each dendrite
         # of the HTM cell; shape: (<maxDendritesPerCell>,M,N). There are NO dendrites initially.
         self.dendrites = [None for i in range(maxDendritesPerCell)]
-        
-        self.dutycycle = []
+        self.dendrites_dutyCycle = [None for i in range(maxDendritesPerCell)]
         
         return
     
@@ -74,25 +73,41 @@ class HTM_CELL():
     
     def grow_cell_newDendrite(self, prev_winnerCells=None, high_permInit=False):
         
-        if high_permInit:
-            permInit_ = 0.8*(self.permThreshold-self.permInit) + self.permInit
-            newDendrite = np.array(np.random.normal(loc=permInit_, scale=self.permInit_sd, size=[self.M, self.N]),
-                                   dtype=np.float64)
-        else:
-            newDendrite = np.array(np.random.normal(loc=self.permInit, scale=self.permInit_sd, size=[self.M, self.N]),
-                                   dtype=np.float64)
         
-        newDendrite = newDendrite*prev_winnerCells
-        # 'newDendrite' will ONLY have connections (at permInit level) to 'presynaptic_WinnerCells'.
-        # The rest will be all 0.0. Any dendrite will have atmost <maxSynapsesPerDendrite> synapses.
+        newDendrite = np.array(np.random.normal(loc=self.permInit, scale=self.permInit_sd, size=[self.M, self.N]),
+                               dtype=np.float64)
+        
+        # A Dendrite will only have maximum <maxSynapsesPerDendrite> synapses.
+        # Hence, if there are more than <maxSynapsesPerDendrite> winner cells
+        # in 'prev_winnerCells', then <maxSynapsesPerDendrite> are randomly 
+        # chosen for synaptic connection.
+        if np.count_nonzero(prev_winnerCells) > self.maxSynapsesPerDendrite:
+            prev_winnerCells_ = np.zero(shape=[self.M, self.N])
+            list_prev_WinnerCells_idx = get_idx_nonZeroElements(prev_winnerCells)
+            
+            random.seed()
+            list_prev_WinnerCells_idx = random.choices(list_prev_WinnerCells_idx, k=self.maxSynapsesPerDendrite)
+            
+            for i in list_prev_WinnerCells_idx:
+                prev_winnerCells_[i] = 1
+        
+        else:
+            prev_winnerCells_ = prev_winnerCells
+        
+        newDendrite = newDendrite*prev_winnerCells_
+        # 'newDendrite' will ONLY have connections (at permInit level) to 
+        # 'presynaptic_WinnerCells'. The rest will be all 0.0. Any dendrite 
+        # will have atmost <maxSynapsesPerDendrite> synapses.
         
         newDendrite_idx = None
         
-        # 'newDendrite' will be assigned to the first "non-NONE" index in self.dendrites array
+        # 'newDendrite' will be assigned to the first "non-NONE" index in 
+        # self.dendrites array
         for i in range(self.maxDendritesPerCell):
             if self.dendrites[i] is None:
                 newDendrite_idx = i
                 self.dendrites[newDendrite_idx] = newDendrite
+                self.dendrites_dutyCycle[newDendrite_idx] = self.get_cell_dendriteDutyUpperLimit()
                 break
             else:
                 continue
@@ -116,8 +131,8 @@ class HTM_CELL():
             # If there is no synapse existing between 'preSynapticWinnerCell' and the 'dendrite_idx',
             # create one synapse!
             if self.dendrites[dendrite_idx][preSynapticWinnerCell] == 0.0:
-                self.dendrites[dendrite_idx][preSynapticWinnerCell] == np.random.normal(loc=self.permInit, 
-                                                                                        scale=self.permInit_sd)
+                self.dendrites[dendrite_idx][preSynapticWinnerCell] = np.random.normal(loc=self.permInit, 
+                                                                                       scale=self.permInit_sd)
                 newSynapsesCapacity -= 1
                 numNewSynapses += 1
     
@@ -200,6 +215,9 @@ class HTM_CELL():
             predDendrites = np.where(dendritesSpikes)[0] # 1D numpy array of max. possible length 
                                                          # <maxDendritesPerCell>, with integer entries
                                                          # between 0 and <maxDendritesPerCell>-1.                          
+            for dendrite_idx in predDendrites:
+                self.dendrites_dutyCycle[dendrite_idx] = self.get_cell_dendriteDutyUpperLimit()
+            
         return cell_predictivity, predDendrites
     
     
@@ -213,7 +231,8 @@ class HTM_CELL():
         return np.array(self.dendrites, dtype=object)
     
     
-    def update_cell_dutycycle(self, prev_state=None, prev_pred=None):
+    def get_cell_dendriteDutyUpperLimit(self):
         
+        return int(9*self.M*(self.maxDendritesPerCell/3))
         
-        return
+    
