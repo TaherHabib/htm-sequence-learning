@@ -8,88 +8,46 @@ planned for execution in version 0.
 """
 
 import numpy as np
-import pandas as pd
 
-
-from htm_cell import HTM_CELL
+from htm_cell_v1 import HTM_CELL
 from ufuncs import dot_prod
 
 # ========================DEFINING HTM NETWORK=================================
 
 class HTM_NET():
 
-    def __init__(self, M=None, N=None, k=None, 
-                 n_dendrites=None, n_synapses=None, 
-                 nmda_th=None, perm_th=None, perm_init=None, perm_init_sd=None,
-                 perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None):
-        """
-        Initializer Function.
-
-        Parameters
-        ----------
-        M : TYPE, optional
-            DESCRIPTION. The default is None.
-        N : TYPE, optional
-            DESCRIPTION. The default is None.
-        k : TYPE, optional
-            DESCRIPTION. The default is None.
-        n_dendrites : TYPE, optional
-            DESCRIPTION. The default is None.
-        n_synapses : TYPE, optional
-            DESCRIPTION. The default is None.
-        nmda_th : TYPE, optional
-            DESCRIPTION. The default is None.
-        perm_th : TYPE, optional
-            DESCRIPTION. The default is None.
-        perm_init : TYPE, optional
-            DESCRIPTION. The default is None.
-        perm_decrement : TYPE, optional
-            DESCRIPTION. The default is None.
-        perm_increment : TYPE, optional
-            DESCRIPTION. The default is None.
-        perm_decay : TYPE, optional
-            DESCRIPTION. The default is None.
-        perm_boost : TYPE, optional
-            DESCRIPTION. The default is None.
-
-        Returns
-        -------
-        None.
-
-        """
-        self.M = M # 8
-        self.N = N # 175 = k*M
-        self.k = k # 25
+    def __init__(self, cellsPerColumn=None, numColumns=None, 
+                 maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
+                 nmdaThreshold=None, permThreshold=None, permInit=None, permInit_sd=None,
+                 perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None,
+                 avgLen_reberString=None, verbose=2):
+        
+        self.M = cellsPerColumn # 8
+        self.N = numColumns # 175 = k*M
+        
+        self.nmdaThreshold = nmdaThreshold
+        self.permInit = permInit
+        self.permInit_sd = permInit_sd
         
         self.perm_decrement = perm_decrement
         self.perm_increment = perm_increment
         self.perm_decay = perm_decay
         self.perm_boost = perm_boost
         
-        
         # Initializing every cell in the network, i.e. setting up the dendrites for each cell.
         self.net_arch = np.empty([self.M, self.N], dtype=HTM_CELL)        
         for i in range(self.M):
             for j in range(self.N):
-                self.net_arch[i,j] = HTM_CELL(i, j, M, N, n_dendrites, n_synapses,
-                                              nmda_th, perm_th, perm_init, perm_init_sd)        
+                self.net_arch[i,j] = HTM_CELL(self.M, self.N, maxDendritesPerCell, maxSynapsesPerDendrite,
+                                              nmdaThreshold, permThreshold, permInit, permInit_sd, 
+                                              avgLen_reberString)        
         return
     
     
     def get_onestep_prediction(self, net_state=None):
         """
         Computes the current step's predictions. Disregarding the LRD mechanism.
-
-        Parameters
-        ----------
-        net_state : binary array of shape (MxN), containing the activity of 
-        cell population from current time step.
         
-        Returns
-        -------
-        pred : binary array of shape (MxN), containing the current timestep's 
-        predictions (input chars for the next timestep).
-
         """
         
         # ASSUMPTION: There will never be two dendrites on the same cell that
@@ -100,10 +58,7 @@ class HTM_NET():
         # MxN binary numpy array to store the predictive states of all cells.
         pred = np.zeros([self.M, self.N], dtype=np.int8)
         
-        # MxN numpy array to store the index of the dendrites that led to the
-        # predictive states of the cell. For unpredicted cells, the values are NaN.
-        pred_dend = np.empty([self.M, self.N], dtype=object)
-        pred_dend[:] = np.nan
+        dict_predDendrites = {}
         
         for j in range(self.N):
             for i in range(self.M):
@@ -111,15 +66,15 @@ class HTM_NET():
                                                                                # shape: (<cell.n_dendrites>,M,N)
                 
                 # 'cell_dendActivity' will be a boolean array of shape (<cell.n_dendrites>,)
-                cell_dendActivity = dot_prod(net_state,cell_connSynapses)>self.net_arch[i,j].nmda_th
+                cell_dendActivity = dot_prod(net_state, cell_connSynapses)>self.nmdaThreshold
                 
                 # if any denrite of the cell is active, then the cell becomes predictive.
                 if any(cell_dendActivity):
                     pred[i,j] = 1
-                    pred_dend[i,j] = np.where(cell_dendActivity)[0] # RHS would be 1D numpy array of 
-                                                                    # max. length <cell.n_dendrites>
+                    dict_predDendrites[(i,j)] = np.where(cell_dendActivity)[0] # RHS would be 1D numpy array of 
+                                                                                # max. length <cell.n_dendrites>
                     
-        return pred, pred_dend
+        return pred, dict_predDendrites
     
     
     def get_LRD_prediction(self):
@@ -191,15 +146,14 @@ class HTM_NET():
                 curr_state[:,j] -= 1 
                 
         # 'curr_pred' is MxN binary matrix holding predictions for current timetep
-        curr_pred, curr_pred_dend = self.get_onestep_prediction(curr_state)
+        curr_pred, curr_predDendrites = self.get_onestep_prediction(curr_state)
         
-        return curr_state, curr_pred, curr_pred_dend
+        return curr_state, curr_pred, curr_predDendrites
     
     
     
-    def do_net_PermanenceUpdate(self, curr_state=None, prev_state=None, 
-                              prev_pred=None, prev_pred_dend=None, 
-                              curr_input=None):
+    def update_net_synapticPermanences(self, curr_state=None, prev_state=None, 
+                                       prev_pred=None, prev_predDendrites=None):
         
         #----------------------------------------------------------------------
         # From winning columns, collect all columns that are unpredicted 
@@ -207,16 +161,16 @@ class HTM_NET():
         # (minicols with more than one 1).
         #----------------------------------------------------------------------
         
-        winning_cols = np.where(curr_input)[0] # np.array of length <k>
+        active_cols = np.unique(np.where(curr_state)[1]) # np.array of length <k>
         
-        # 'all_predicted_cols' will be np.array of max. possible length <self.N>
-        all_predicted_cols = np.unique(np.where(prev_pred)[1]) 
+        # 'predicted_cols' will be np.array of max. possible length <self.N>
+        predicted_cols = np.unique(np.where(prev_pred)[1]) 
                 
-        unpredicted_cols = [col for col in winning_cols if curr_state[:, col].sum() == self.M]
+        bursting_cols = [col for col in active_cols if curr_state[:, col].sum() == self.M]
         
-        corr_predicted_cols = [col for col in winning_cols if col not in unpredicted_cols]
+        corr_predicted_cols = [col for col in active_cols if col not in bursting_cols]
         
-        incorr_predicted_cols = [col for col in all_predicted_cols if col not in corr_predicted_cols]
+        incorr_predicted_cols = [col for col in predicted_cols if col not in corr_predicted_cols]
         
         #_______________________CASE I_________________________________________
         
@@ -226,7 +180,7 @@ class HTM_NET():
         
         multi_cell_MaxOverlap = False
                 
-        for j in unpredicted_cols:
+        for j in bursting_cols:
             
             overlap = [] # 'overlap' will eventually be a list of np.arrays.
                          # shape: (self.M, <cell.n_dendrites>)
@@ -257,12 +211,12 @@ class HTM_NET():
                 
                 # Decrement all synapses by p- and increment active synapses by p+
                 self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend + self.perm_increment*prev_state 
-                - self.perm_decrement*MaxOverlap_cell_dend
+                - self.perm_decrement#*MaxOverlap_cell_dend
                 
                 # Re-initializing other cells within Max. Overlap
                 for d in range(1,len(max_overlap_cell)):
                     self.net_arch[max_overlap_cell[d],j].dendrites[max_overlap_dendrite[d]] = \
-                        np.random.normal(loc=self.perm_init, scale=0.01, size=[self.M, self.N])                 
+                        np.random.normal(loc=self.permInit, scale=self.permInit_sd, size=[self.M, self.N])                 
                     
             else:
                 
@@ -270,7 +224,7 @@ class HTM_NET():
                 
                 # Increment active synapses by p+ and Decrement all synapses by p-
                 self.net_arch[max_overlap_cell[0],j].dendrites[max_overlap_dendrite[0]] = MaxOverlap_cell_dend + self.perm_increment*prev_state 
-                - self.perm_decrement*MaxOverlap_cell_dend
+                - self.perm_decrement#*MaxOverlap_cell_dend
                 
             
         #_______________________CASE II________________________________________
@@ -288,9 +242,9 @@ class HTM_NET():
             for i in cells_i:
                 
                 # for indices of all dendrites that led to cell's prediction.
-                for d in prev_pred_dend[i,j]:
+                for d in prev_predDendrites[(i,j)]:
                     self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d] + self.perm_increment*prev_state 
-                    - self.perm_decrement*self.net_arch[i,j].dendrites[d]
+                    - self.perm_decrement#*self.net_arch[i,j].dendrites[d]
             
         
         #_______________________CASE III_______________________________________
@@ -308,27 +262,14 @@ class HTM_NET():
             for i in cells_i:
                 
                 # for indices of all dendrites that led to cell's wrong prediction.
-                for d in prev_pred_dend[i,j]:
+                for d in prev_predDendrites[(i,j)]:
                     self.net_arch[i,j].dendrites[d] = self.net_arch[i,j].dendrites[d] - self.perm_decay*prev_state
-                    
-        
-        #_______________________BOOSTING_______________________________________
-        
-        # Boosting of all the synaptic permanence values of all the cells with 
-        # low activity and/or predictivity.
-        # ---------------------------------------------------------------------
-        
-        
+    
         
         return multi_cell_MaxOverlap
     
     
-    def intrinsic_plasticity(self):
-        
-        return None
-    
-    
-    def get_NETWORK(self, char_minicols='all'):
+    def get_NETWORK(self, char_onehot='all'):
         """
         Returns the network architecture – MxN matrix of HTM_CELLs
 
@@ -338,14 +279,14 @@ class HTM_NET():
         
         """
         
-        if char_minicols == 'all':
+        if char_onehot == 'all':
             return  self.net_arch
         
         else:
-            return self.net_arch[:, np.where(char_minicols)[0]]
+            return self.net_arch[:, np.where(char_onehot)[0]]
     
     
-    def prune_net_Permanences(self):
+    def prune_net_permanences(self):
         """
         
 

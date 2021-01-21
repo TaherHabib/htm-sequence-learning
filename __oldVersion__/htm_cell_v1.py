@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 
 class HTM_CELL():
@@ -8,33 +7,30 @@ class HTM_CELL():
     
     """
     
-    def __init__(self, i=None, j=None, M=None, N=None, n_dendrites=None, n_synapses=None, 
-                 nmda_th=None, perm_th=None, perm_init=None, perm_init_sd=None):
+    def __init__(self, cellsPerColumn=None, numColumns=None, maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
+                 nmdaThreshold=None, permThreshold=None, permInit=None, permInit_sd=None,
+                 avgLen_reberString=None):
         
         """
         
         """
         
-        self.M = M # number of cells per minicolumn
-        self.N = N # number of minicolumns
+        self.M = cellsPerColumn 
+        self.N = numColumns
         
-        self.n_dendrites = n_dendrites # number of dendritic segments on a single cell
-        self.n_synapses = n_synapses # total number of CONNECTED synapses on a single dendritic segment
+        self.n_dendrites = maxDendritesPerCell
+        self.n_synapses = maxSynapsesPerDendrite
         
-        self.nmda_th = nmda_th
-        self.perm_th = perm_th
-        self.perm_init = perm_init
-        self.perm_init_sd = perm_init_sd
+        self.perm_th = permThreshold
+        self.perm_init = permInit
+        self.perm_init_sd = permInit_sd
         
         # list containing the matrices of potential synapses (permanence values) for each dendrite
         # of the HTM cell; numpy array of 32 MxN matrices, shape: (32,M,N)
         self.dendrites = np.array([np.random.normal(loc=self.perm_init, scale=self.perm_init_sd, size=[self.M, self.N])
                           for i in range(self.n_dendrites)], dtype=np.float64)
         
-        # Preventing all autapses
-        for d in range(self.n_dendrites):
-            self.dendrites[d,i,j] = 0.0
-        
+        self.avgLen_reberString = avgLen_reberString
         self.dutycycle = []
         
         
@@ -51,9 +47,8 @@ class HTM_CELL():
 
         """
         
-        connected_synapses = np.array(self.dendrites > self.perm_th) # boolean list of 32 MxN binary matrices, 
-                                                                     # shape: (32,M,N)
-        return connected_synapses
+        return np.array(self.dendrites > self.perm_th) # boolean list of 32 MxN binary matrices, 
+                                                        # shape: (32,M,N)
             
         
     def get_cell_synaPermanences(self):
@@ -68,9 +63,3 @@ class HTM_CELL():
         """
         
         return self.dendrites
-    
-    
-    def update_cell_dutycycle(self, prev_state=None, prev_pred=None):
-        
-        
-        return None
