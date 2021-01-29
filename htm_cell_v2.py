@@ -16,8 +16,8 @@ class HTM_CELL():
     def __init__(self, cellsPerColumn=None, numColumns=None, columnsPerChar=None,
                  maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
                  nmdaThreshold=None, permThreshold=None, permInit=None, permInit_sd=None,
-                 perm_decrement=None, perm_increment=None, perm_decay=None, perm_boost=None,
-                 avgLen_reberString=None, dendriteDuty_UpperLimit=None):
+                 perm_decrement=None, perm_increment=None, perm_decay=None,
+                 dendriteDuty_UpperLimit=None):
         
         self.M = cellsPerColumn
         self.N = numColumns
@@ -34,7 +34,6 @@ class HTM_CELL():
         self.perm_decrement = perm_decrement
         self.perm_increment = perm_increment
         self.perm_decay = perm_decay
-        self.perm_boost = perm_boost
         
         # list containing the (numpy array) MxN matrices of potential synapses (permanence values) for each dendrite
         # of the HTM cell; shape: (<maxDendritesPerCell>,M,N). There are NO dendrites initially.
