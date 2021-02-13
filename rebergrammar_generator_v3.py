@@ -130,7 +130,7 @@ class Reber_Grammar():
                 else:
                     node = transitions[0][i]
                 
-            if len(inchars) > minLength and len(inchars) <= maxL:
+            if len(inchars) >= minLength and len(inchars) <= maxL:
                 return inchars, outchars
             else:
                 continue
@@ -224,8 +224,8 @@ class Reber_Grammar():
             simple_in_onehot = one_srg[0][1] 
             simple_out_onehot = one_srg[0][2]
         
-            emb_in_onehot = simple_in_onehot[:] # contains the one-hot encoded SRG, except the final 'Z'
-            emb_out_onehot = simple_out_onehot[:]
+            emb_in_onehot = list(simple_in_onehot[:]) # contains the one-hot encoded SRG, except the final 'Z'
+            emb_out_onehot = list(simple_out_onehot[:])
             
             # Selecting one of 'T' or 'P' for embedding and computing its one-hot encoding
             embedded_char = embedded_chars[np.random.randint(0, len(embedded_chars))]

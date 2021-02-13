@@ -26,7 +26,7 @@ import pandas as pd
 import copy
 import random
 
-from htm_net_v3_ import HTM_NET
+from htm_net_v3 import HTM_NET
 from rebergrammar_generator_v3 import *
 
 
@@ -36,11 +36,8 @@ class Experimentor():
                  maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
                  nmdaThreshold=None, permThreshold=None, learningThreshold=None,
                  permInit=None, permInit_sd=None,
-                 perm_decrement=None, perm_increment=None, 
-                 perm_decay=None, perm_boost=None,
-                 activityHorizon=None, activityThreshold=None,
-                 rg=None, rg_inputoutput=None, avgLen_reberString=None,
-                 dendriteDuty_UpperLimit=None,
+                 perm_decrement=None, perm_increment=None, perm_decay=None,
+                 rg=None, rg_inputoutput=None,
                  htm_network=None,
                  verbose=2):
         
@@ -55,6 +52,9 @@ class Experimentor():
         self.rg_inputoutput = rg_inputoutput
         self.nof_strings = len(rg_inputoutput)
         self.verbose = verbose
+        
+        # Computing maxDendriteDormancy
+        self.maxDendriteDormancy = 8*30 
         
         # Onehot for 'Z'
         self.z_onehot = self.rg.CharToOnehot('Z')
@@ -76,9 +76,8 @@ class Experimentor():
                                        learningThreshold=learningThreshold, 
                                        permInit=permInit, permInit_sd=permInit_sd,
                                        perm_decrement=perm_decrement, perm_increment=perm_increment,
-                                       perm_decay=perm_decay, perm_boost=perm_boost,
-                                       avgLen_reberString=avgLen_reberString,
-                                       dendriteDuty_UpperLimit=dendriteDuty_UpperLimit,
+                                       perm_decay=perm_decay,
+                                       dendriteDuty_UpperLimit=self.maxDendriteDormancy,
                                        verbose=verbose)
         else:
             self.htm_network = htm_network
@@ -90,7 +89,7 @@ class Experimentor():
         
         # DataFrame to store results for each string in 'list_in_strings'
         df_res = pd.DataFrame(columns=('reber_string', 'htm_states', 'htm_preds', 'htm_predDendrites', 
-                                       'htm_winner_cells', 'htm_network', 'issue'))
+                                       'htm_winner_cells', 'nof_dendrites', 'issue'))
         
         # 'htm_states' and 'htm_preds' store MxN binary state and prediction matrix of HTM network at each timestep 
         # (each letter), for each input reber string, respectively.
@@ -140,7 +139,7 @@ class Experimentor():
                     
                 else:
                     
-                    #self.htm_network.update_net_dendriteDutyCycle()
+                    self.htm_network.update_net_dendriteDutyCycle()
                     
                     # HEBBIAN LEARNING & SYNAPTIC PERMANENCE UPDATE
                     # Here, the network is learning to predict for symbol that is currrently in 'in_string[step]'
@@ -184,7 +183,7 @@ class Experimentor():
                     # for 'Z'. In other words, the output of 'dot_prod(net_state,cell_connSynapses)' in 
                     # 'get_onestep_prediction()' will always be all zero, at this step!
                 
-                    #self.htm_network.update_net_dendriteDutyCycle()
+                    self.htm_network.update_net_dendriteDutyCycle()
                     
                     _ = self.htm_network.update_net_synapticPermanences(curr_state=curr_state,
                                                                         prev_state=htm_states[step],
@@ -194,15 +193,17 @@ class Experimentor():
                                                                         )
                     #htm_networks.append(self.htm_network.get_NETWORK(char_minicols=self.z_minicols))
             
-                    
-            htm_net_ = self.htm_network.get_NETWORK(char_onehot='all')
-            
+            count_dend = 0
+            for i in range(self.M):
+                for j in range(self.N):
+                    count_dend += self.htm_network.net_arch[i,j].get_cell_numDendrites()
+
             df_res.loc[string_idx] = [in_string_alpha, 
                                       np.array(htm_states), 
                                       np.array(htm_preds), 
                                       np.array(htm_predDendrites),
                                       np.array(htm_winnerCells),
-                                      htm_net_,
+                                      count_dend,
                                       issue]
             
             # np.array(htm_states) is numpy array of shape: (<len(in_string)>+1,M,N)
@@ -212,6 +213,7 @@ class Experimentor():
             
         dict_results = {
             'results': df_res,
+            'final_net': self.htm_network.net_arch
             }
         
         return dict_results

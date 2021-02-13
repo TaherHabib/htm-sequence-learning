@@ -1,5 +1,11 @@
 """
-FILE DESCRIPTION:
+FILE DESCRIPTION: 
+    
+    1. v4 takes care of multiple maxOverlap cells in bursting columns.
+    
+    2. v4 also takes care of repeating symbols in the inputstream and chooses the same set of 
+    winner_cells in the repetition.
+                     
 ------------------------
 
 ....
@@ -38,12 +44,11 @@ class HTM_NET():
 
     def __init__(self, numColumns=None, cellsPerColumn=None, columnsPerChar=None,
                  maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
-                 nmdaThreshold=None, permThreshold=None, 
-                 learningThreshold=None,
+                 nmdaThreshold=None, permThreshold=None, learningThreshold=None,
                  permInit=None, permInit_sd=None,
                  perm_decrement=None, perm_increment=None, 
-                 perm_decay=None,
-                 dendriteDuty_UpperLimit=None,
+                 perm_decay=None, perm_boost=None,
+                 avgLen_reberString=None,
                  verbose=2):
         
         self.M = cellsPerColumn # 8
@@ -55,7 +60,7 @@ class HTM_NET():
         # max. number of CONNECTED synapses on a single dendritic segment.
         
         self.nmdaThreshold = nmdaThreshold
-        self.learningThreshold = learningThreshold 
+        self.learningThreshold = learningThreshold
         
         self.verbose = verbose
         
@@ -71,8 +76,8 @@ class HTM_NET():
                                               nmdaThreshold=nmdaThreshold, permThreshold=permThreshold, 
                                               permInit=permInit, permInit_sd=permInit_sd,
                                               perm_decrement=perm_decrement, perm_increment=perm_increment, 
-                                              perm_decay=perm_decay,
-                                              dendriteDuty_UpperLimit=dendriteDuty_UpperLimit)
+                                              perm_decay=perm_decay, perm_boost=perm_boost,
+                                              avgLen_reberString=avgLen_reberString)
         
         return
     
@@ -204,20 +209,20 @@ class HTM_NET():
         # incorrectly predicted (minicols with more than one 1).
         
         active_cols = list(np.unique(np.where(curr_state)[1]))
-        # np.array of length <k>
+        # list of length <k>
         
-        predicted_cols = list(np.unique(np.where(prev_pred)[1]))
-        # np.array of max. possible length <self.N>
-        
+        predicted_cols = list(np.unique(np.where(prev_pred)[1]) )
+        # list of max. possible length <self.N>
+                
         prevWinner_cols = list(np.unique(np.where(prev_winnerCells)[1]))
         # list of length <k>
-                
+        
         bursting_cols = [col for col in active_cols if curr_state[:, col].sum() == self.M]
         
         correctlyPredicted_cols = [col for col in active_cols if col not in bursting_cols]
         
         otherPredicted_cols = [col for col in predicted_cols if col not in correctlyPredicted_cols]
-        
+
         #_______________________CASE 0_________________________________________
         # Checking if there is a repetition of symbols in the inputstream
         # ---------------------------------------------------------------------
@@ -234,15 +239,15 @@ class HTM_NET():
                     
             return winnerCells
         
-        else:        
-                 
+        else:
+        
             winnerCells = np.zeros([self.M, self.N], dtype=np.int8)
         
-            #_______________________CASE I_________________________________________
+            #_______________________CASE I_____________________________________
     
             # When an active column is NOT PREDICTED, it will burst. 
             # (This would happen in the initial stages of learning)
-            # ---------------------------------------------------------------------
+            # -----------------------------------------------------------------
             
             if len(bursting_cols) != 0:
                 burstColumns_winnerCells = self.case_net_burstColumns(burstCols=bursting_cols,
@@ -253,12 +258,12 @@ class HTM_NET():
                         winnerCells[cell_idx] = 1
                 else:
                     return None
-            
-            #_______________________CASE II________________________________________
+        
+            #_______________________CASE II____________________________________
             
             # When winning column IS CORRECTLY PREDICTED (can have more than 1 
             # predicted cells)
-            # ---------------------------------------------------------------------
+            # -----------------------------------------------------------------
             
             if len(correctlyPredicted_cols) != 0:
                 reinforcePredictedColumns_winnerCells = self.case_net_reinforcePredictedColumns(corrPredictedCols=correctlyPredicted_cols,
@@ -267,19 +272,19 @@ class HTM_NET():
                                                                                                 prev_predDendrites=prev_predDendrites)
                 for cell_idx in reinforcePredictedColumns_winnerCells:
                     winnerCells[cell_idx] = 1
-                
-            #_______________________CASE III_______________________________________
             
-            # When a column IS Otherwise PREDICTED (can have more than 1 predicted 
-            # cells)
-            # ---------------------------------------------------------------------
+            #_______________________CASE III___________________________________
+            
+            # When a column IS Otherwise PREDICTED (can have more than one 
+            # predicted cells)
+            # -----------------------------------------------------------------
             
             if len(otherPredicted_cols) != 0:
                 self.case_net_decayPredictedColumns(otherPredictedCols=otherPredicted_cols,
                                                     prev_state=prev_state,
                                                     prev_pred=prev_pred,
                                                     prev_predDendrites=prev_predDendrites)
-        
+             
             return winnerCells
     
     
@@ -319,14 +324,29 @@ class HTM_NET():
                         continue
                     
                     else:
+                        
                         dendrite_overlapSynapses = np.count_nonzero(prev_winnerCells*self.net_arch[cell_idx].dendrites[dendrite_idx])
                         if dendrite_overlapSynapses == len(list_prev_winnerCells):    
                             matchFound = True
                             cell_dendrite_selection.append((cell_idx, dendrite_idx))
                             break
+                            
+# =============================================================================
+#                         elif dendrite_overlapSynapses == 0:
+#                             # awaiting creation of new dendrite on the cell
+#                             continue
+# =============================================================================
                                                         
                         else:
                             continue
+# =============================================================================
+#                             print(color.RED, color.BOLD, ':::::::::::::::::::::::::::::::::::::::::::Issue 006 encountered' \
+#                                   ' :::::::::::::::::::::::::::::::::::::::::::', color.END, color.END)
+#                             print(color.RED, color.BOLD, '::::::::::::::::::::::::::::::::::::::::::: dendrite_overlapSynapses: ', dendrite_overlapSynapses, \
+#                                   ' :::::::::::::::::::::::::::::::::::::::::::', color.END, color.END)
+#                             print(color.RED, color.BOLD, '::::::::::::::::::::::::::::::::::::::::::: ABORT???' \
+#                                   ' :::::::::::::::::::::::::::::::::::::::::::', color.END, color.END)   
+# =============================================================================
                         
                 if not matchFound:
                     cell_dendrite_selection.append((cell_idx, None))
@@ -369,50 +389,51 @@ class HTM_NET():
                 
             else:
                 return None
+                                  
             
-    
     def case_net_burstColumns(self, burstCols=None, prev_state=None, prev_winnerCells=None):
         
         winner_cells = []
         
         for j in burstCols:
-        
+    
             cells_numUnusedDendrites = [] 
             # this will be an array of <M> elements with integer entries
             # between 0 and <maxDendritesPerCell>.
             
-            cells_overlapSynapses = []
-            cells_overlapScore = []
-            
+            df_cellDendrite_overlap = pd.DataFrame(columns = ['cell_dendrite_idx', 'overlapSynapses', 'overlapScore'],
+                                                   index = [r for r in range(self.M*self.maxDendritesPerCell)])
             #------------------------------------------------------------------
+            r = 0
             for i in range(self.M):
                 
                 cells_numUnusedDendrites.append(self.net_arch[i,j].get_cell_numUnusedDendrites())
                 
                 for dendrite_idx in range(self.maxDendritesPerCell):
                     if self.net_arch[i,j].dendrites[dendrite_idx] is None:
-                        cells_overlapSynapses.append(((i,dendrite_idx), -1))
-                        cells_overlapScore.append(((i,dendrite_idx), -1))
-                        
+                        df_cellDendrite_overlap.loc[r] = pd.Series({'cell_dendrite_idx': (i, dendrite_idx),
+                                                                    'overlapSynapses': -1,
+                                                                    'overlapScore': -1})
                     else:
-                        cells_overlapSynapses.append(((i,dendrite_idx), np.count_nonzero(prev_state*self.net_arch[i,j].dendrites[dendrite_idx])))
-                        cells_overlapScore.append(((i,dendrite_idx), dot_prod(prev_state, self.net_arch[i,j].dendrites[dendrite_idx])[0]))
+                        df_cellDendrite_overlap.loc[r] = pd.Series({'cell_dendrite_idx': (i, dendrite_idx),
+                                                                    'overlapSynapses': np.count_nonzero(prev_state*self.net_arch[i,j].dendrites[dendrite_idx]),
+                                                                    'overlapScore': dot_prod(prev_state, self.net_arch[i,j].dendrites[dendrite_idx])[0]})
                         # 'prev_state' is a binary and 'dendrites[idx]' is a 
-                        # float (numpy) MxN matrix. Hence,'overlapScore' 
+                        # float (numpy) MxN matrix. Hence,'dot_prod()' output 
                         # will be a numpy array of length 1, with a single 
                         # float value, greater than or equal to 0.
+                    r+=1  
             
             #__________________________________________________________________
             # Finding the best matching segment using 
             # 'cells_overlapScorePerDendrite'.
             
-            _overlapSynapses = [cells_overlapSynapses[i][1] for i in range(len(cells_overlapSynapses))]
-            maxOverlap_bySynapses = np.amax(_overlapSynapses)
+            maxOverlap_bySynapses = np.amax(df_cellDendrite_overlap['overlapSynapses'])
             
             #__________CASE: NO MATCHING DENDRITE IS FOUND_____________________
             # Grow a new one on least used cell in the column.
             if maxOverlap_bySynapses <= self.learningThreshold:
-                                
+                
                 # Checking for the condition where all <maxDendritesPerCell> 
                 # dendrtes are used on every cell and still NO Match was found.
                 if np.amax(cells_numUnusedDendrites) == 0:
@@ -434,62 +455,95 @@ class HTM_NET():
                               ' new synapses.',  color.END)
                           
                     winner_cells.append((cellIdx_leastUsedCell, j))
-            
-            #_____________CASE: MATCHING DENDRITE FOUND________________________
-            else:
-                cells_maxOverlap_bySynapses = [cells_overlapSynapses[i] for i in np.where(_overlapSynapses == maxOverlap_bySynapses)[0]]
                 
-                #____________Multiple Cells with MaxOverlapSynapses_______________ 
+            #__________CASE: MATCHING DENDRITE FOUND___________________________
+            else:
+                df_maxOverlapSynapses = df_cellDendrite_overlap.iloc[np.where(df_cellDendrite_overlap['overlapSynapses'] == maxOverlap_bySynapses)[0]]
+                
+                df_maxOverlapScore = df_maxOverlapSynapses.iloc[np.where(df_maxOverlapSynapses['overlapScore'] == \
+                                                                         np.amax(df_maxOverlapSynapses['overlapScore']))[0]]
+                 
+                #____________Multiple Cells with MaxOverlapScore_______________ 
                 # ________________with 'prev_state' Found______________________
-                if len(cells_maxOverlap_bySynapses) > 1:
+                if len(df_maxOverlapScore) > 1:
                     print(color.RED, color.BOLD, ':::::::::::::::::::::::::::::::::::::::::::Issue 003 in col: ',j, \
                           ' :::::::::::::::::::::::::::::::::::::::::::', color.END, color.END)
-                    print(cells_maxOverlap_bySynapses)
-                    return None
+                    print(df_maxOverlapScore)
                     
-# =============================================================================
-#                     filtered_cells_overlapScore = []
-#                     for cell_dend in cells_maxOverlap_bySynapses:
-#                         for c_d in cells_overlapScore:
-#                             if c_d[0] == cell_dend[0]:
-#                                 filtered_cells_overlapScore.append(c_d)
-#                     
-#                     _overlapScores = [filtered_cells_overlapScore[i][1] for i in range(len(filtered_cells_overlapScore))]
-#                     cells_maxOverlap_byScore = [filtered_cells_overlapScore[i] for i in np.where(_overlapScores == np.amax(_overlapScores))[0]]
-#                     
-#                     if len(cells_maxOverlap_byScore) > 1:
-#                         return None
-#                     
-#                     else:
-#                         bestMatch_CellDendrite = cells_maxOverlap_byScore[0][0]
-#                         bestMatch_Score = cells_maxOverlap_byScore[0][1]
-#                         
-#                         reinforcedSynapses, tot_numSynapses = self.net_arch[bestMatch_CellDendrite[0], j].update_cell_dendritePermanences(dendrite_idx=bestMatch_CellDendrite[1],
-#                                                                                                                                           prev_state=prev_state)
-#                         if self.verbose > 1:
-#                             print(color.PURPLE, 'MULT. MATCH / BEST SCORE FOUND. Cell {', bestMatch_CellDendrite[0],',',j,'}; dendrite: ',bestMatch_CellDendrite[1], \
-#                                   '. OverlapScore: ', bestMatch_Score, \
-#                                   '. Reinforcing ', np.count_nonzero(reinforcedSynapses),' synapses. Existing synapses= ', tot_numSynapses, color.END)
-#                         
-#                         winner_cells.append((bestMatch_CellDendrite[0], j))
-#                         
-#                         for cell_dend in cells_maxOverlap_bySynapses:
-#                             if cell_dend[0] == bestMatch_CellDendrite:
-#                                 continue
-#                             else:
-#                                 resetSynapses_ = np.zeros(shape=[self.M,self.N])
-#                                 for i in get_idx_nonZeroElements(prev_state*self.net_arch[cell_dend[0][0],j].dendrites[cell_dend[0][1]]):
-#                                     resetSynapses_[i] = 1
-#                                 self.net_arch[cell_dend[0][0], j].reset_cell_dendrite(dendrite_idx=cell_dend[0][1],
-#                                                                                       resetSynapses=resetSynapses_)
-# =============================================================================
-                
-                #____________Only Single Cell with MaxOverlapSynapses_____________
+                    #----------------------------------------------------------
+                    # Find the dendrite that best matches the 'prev_winnerCells'
+                    # from among the ones that best match 'prev_state'.                    
+                    overlapScore_winners = []
+                    for cell_dendrite_idx in list(df_maxOverlapScore['cell_dendrite_idx']):
+                        overlapScore_winners.append(dot_prod(prev_winnerCells, self.net_arch[cell_dendrite_idx[0],j].dendrites[cell_dendrite_idx[1]])[0])
+                        
+                    df_maxOverlapScore['overlapScore_winners'] = overlapScore_winners
+                    
+                    df_maxOverlapScore_winners = df_maxOverlapScore.iloc[np.where(df_maxOverlapScore['overlapScore_winners'] == \
+                                                                                  np.amax(df_maxOverlapScore['overlapScore_winners']))[0]]
+                    
+                    #----------------------------------------------------------
+                    # If there are more than 1 best matches with 'prev_winnerCells'
+                    # then select one of them randomly for reinforcement and 
+                    # reset the other one to 'permInit'. 
+                    # Decay all the other best matches with 'prev_state' to a 
+                    # higher degree.
+                    if len(df_maxOverlapScore_winners) > 1:
+                        
+                        random.seed()
+                        bestMatch_CellDendrite = random.choice(list(df_maxOverlapScore_winners['cell_dendrite_idx']))
+                        
+                        reinforcedSynapses, tot_numSynapses = self.net_arch[bestMatch_CellDendrite[0], j].update_cell_dendritePermanences(dendrite_idx=bestMatch_CellDendrite[1],
+                                                                                                                                          prev_state=prev_winnerCells)
+                        if self.verbose > 1:
+                            print(color.PURPLE, color.BOLD, 'MULT. MATCH / MULT. MATCH WINNERS. Cell {', bestMatch_CellDendrite[0],',',j,'}; dendrite: ',bestMatch_CellDendrite[1], \
+                                  '. Reinforcing ', np.count_nonzero(reinforcedSynapses),' synapses. Existing synapses= ', tot_numSynapses, color.END, color.END)
+                        
+                        winner_cells.append((bestMatch_CellDendrite[0], j))
+                        
+                        # Resetting other best match dendrite to 'permInit'.
+                        for cell_dendrite_idx in list(df_maxOverlapScore_winners['cell_dendrite_idx']):
+                            if cell_dendrite_idx == bestMatch_CellDendrite:
+                                continue
+                            else:
+                                self.net_arch[cell_dendrite_idx[0], j].reset_cell_dendrite(dendrite_idx = cell_dendrite_idx[1])
+                        
+                        # Highly decaying other best matches to 'prev_state'.
+                        df_maxOverlapScore = df_maxOverlapScore[df_maxOverlapScore['overlapScore_winners'] != np.amax(df_maxOverlapScore['overlapScore_winners'])]
+                        for cell_dendrite_idx in list(df_maxOverlapScore['cell_dendrite_idx']):
+                            _, _ = self.net_arch[cell_dendrite_idx[0], j].update_cell_dendritePermanences(dendrite_idx=cell_dendrite_idx[1],
+                                                                                                          prev_state=prev_state,
+                                                                                                          high_decay=True)
+                    #----------------------------------------------------------
+                    # Else if, there is only 1 best match then reinforce this one.
+                    # Decay all the other best matches with 'prev_state' to a 
+                    # higher degree.
+                    else:
+                        bestMatch_CellDendrite = list(df_maxOverlapScore_winners['cell_dendrite_idx'])[0]
+                        
+                        reinforcedSynapses, tot_numSynapses = self.net_arch[bestMatch_CellDendrite[0], j].update_cell_dendritePermanences(dendrite_idx=bestMatch_CellDendrite[1],
+                                                                                                                                          prev_state=prev_winnerCells)
+                        if self.verbose > 1:
+                            print(color.PURPLE, color.BOLD, 'MULT. MATCH / SING. MATCH WINNERS. Cell {', bestMatch_CellDendrite[0],',',j,'}; dendrite: ',bestMatch_CellDendrite[1], \
+                                  '. Reinforcing ', np.count_nonzero(reinforcedSynapses),' synapses. Existing synapses= ', tot_numSynapses, color.END, color.END)
+                        
+                        winner_cells.append((bestMatch_CellDendrite[0], j))
+                        
+                        # Highly decaying other best matches to 'prev_state'.
+                        for cell_dendrite_idx in list(df_maxOverlapScore['cell_dendrite_idx']):
+                            if cell_dendrite_idx == bestMatch_CellDendrite:
+                                continue
+                            else:
+                                _, _ = self.net_arch[cell_dendrite_idx[0], j].update_cell_dendritePermanences(dendrite_idx=cell_dendrite_idx[1],
+                                                                                                              prev_state=prev_state,
+                                                                                                              high_decay=True)
+                #____________Only Single Cell with MaxOverlapScore_____________
                 # ________________with 'prev_state' Found______________________
                 else:
-                    bestMatch_CellDendrite = cells_maxOverlap_bySynapses[0][0]
-                    bestMatch_Score = cells_maxOverlap_bySynapses[0][1]
-                
+                                   
+                    bestMatch_CellDendrite = list(df_maxOverlapScore['cell_dendrite_idx'])[0]
+                    bestMatch_Score = list(df_maxOverlapScore['cell_dendrite_idx'])[0]
+            
                     # Reinforce connections with active cells in 'prev_state' and 
                     # punish all other synaptic connections.
                     # Due to the previous restriction of having at least 
@@ -512,7 +566,7 @@ class HTM_NET():
                     if bestMatch_dendriteCapacity < 0:
                         print(color.RED, color.BOLD, ':::::::::::::::::::::::::::::::::::::::::::Issue 002 in cell {', bestMatch_CellDendrite[0],',',j, \
                               '}; dendrite: ',bestMatch_CellDendrite[1], ' :::::::::::::::::::::::::::::::::::::::::::', color.END, color.END)
-                
+                    
                     #________Growing New Synapses To 'prev_winnerCells'________
                     
                     list_reinforcedSynapses = get_idx_nonZeroElements(reinforcedSynapses)
@@ -531,24 +585,26 @@ class HTM_NET():
                     
                     if len(list_unlearnt_winnerCells) <= bestMatch_dendriteCapacity:
                         total_newSynapses, remain_prevWinnerCells = self.net_arch[bestMatch_CellDendrite[0], j].grow_cell_newSynapsesOnDendrite(dendrite_idx=bestMatch_CellDendrite[1],
-                                                                                                                                                prev_winnerCells=prev_winnerCells)
+                                                                                                                                                prev_winnerCells=unlearnt_winnerCells)
                         if self.verbose > 1:
                             print(color.YELLOW, 'Growing ', total_newSynapses,' new Synapses. Remaining Winner Cells: ', len(remain_prevWinnerCells), color.END)
                         
                     
-                    elif len(list_unlearnt_winnerCells) > self.nmdaThreshold:
-# =============================================================================
-#                             winnerCells_ = prev_winnerCells
-#                             list_winnerCells_ = set(list_prev_winnerCells)
-#                             if self.verbose > 1:
-#                                 print(color.PURPLE, 'Unlearnt Winner Cells <= NMDA threshold', color.END)
-#                         else:
-# =============================================================================
-                        winnerCells_ = unlearnt_winnerCells
-                        list_winnerCells_ = list_unlearnt_winnerCells
-                        if self.verbose > 1:
-                            print(color.DARKCYAN, 'Unlearnt Winner Cells > NMDA threshold', color.END)
+                    else:
+                        if len(list_unlearnt_winnerCells) <= self.nmdaThreshold:                       
+                            winnerCells_ = prev_winnerCells
+                            list_winnerCells_ = set(list_prev_winnerCells)
+                        
+                            if self.verbose > 1:
+                                print(color.DARKCYAN, 'Unlearnt Winner Cells <= NMDA threshold', color.END)
                     
+                        else:
+                            winnerCells_ = unlearnt_winnerCells
+                            list_winnerCells_ = list_unlearnt_winnerCells
+                    
+                            if self.verbose > 1:
+                                print(color.DARKCYAN, 'Unlearnt Winner Cells > NMDA threshold', color.END)
+                        
                         #--------------------------------------------------
                         # Finding if there already exists a dendrite in the minicolummn
                         # with match to 'unlearnt_winnerCells'.
@@ -560,7 +616,7 @@ class HTM_NET():
                                 else:
                                     existing_synapticPerm = get_idx_nonZeroElements(self.net_arch[cell_idx,j].dendrites[dendrite_idx])
                                     if  list_winnerCells_ - list_winnerCells_.intersection(existing_synapticPerm) == set():
-                                        cellDendrites_.append((cell_idx, dendrite_idx))
+                                        cellDendrites_.append((cell_idx, dendrite_idx))        
                         #--------------------------------------------------
                         
                         if len(cellDendrites_) == 0:
@@ -570,13 +626,14 @@ class HTM_NET():
                                 return None
                             
                             else:
-                                cellIdx_leastUsedCell = random.choice(np.where(cells_numUnusedDendrites == np.amax(cells_numUnusedDendrites))[0])
+                                cellIdx_leastUsedCell = random.choice(np.where(cells_numUnusedDendrites == np.amax(cells_numUnusedDendrites))[0]) 
                                 newDendrite_idx = self.net_arch[cellIdx_leastUsedCell, j].grow_cell_newDendrite(winnerCells_)               
                                 
                                 if self.verbose > 1:
                                     print(color.YELLOW,'NO EXISTING DENDRITE. Growing new dendrite: ', newDendrite_idx, ' on cell {', cellIdx_leastUsedCell, j, \
-                                          '} with ', self.net_arch[cellIdx_leastUsedCell, j].get_cell_numSynapsesOnDendrite(newDendrite_idx), ' new synapses.',  color.END)
-
+                                          '} with ', self.net_arch[cellIdx_leastUsedCell, j].get_cell_numSynapsesOnDendrite(newDendrite_idx), \
+                                          ' new synapses.',  color.END)
+                                
                                 # Undoing the Previous Reinforcement of Dendrites and de-selecting
                                 # it from 'winner_cells'
                                 self.net_arch[bestMatch_CellDendrite[0], j].undo_cell_dendriteReinforcement(dendrite_idx=bestMatch_CellDendrite[1],
@@ -588,20 +645,17 @@ class HTM_NET():
                             random.seed()
                             cellDendrite_idx = random.choice(cellDendrites_)
                             reinforcedSynapses_, tot_numSynapses_ = self.net_arch[cellDendrite_idx[0], j].update_cell_dendritePermanences(dendrite_idx=cellDendrite_idx[1],
-                                                                                                                                          prev_state=winnerCells_)
-                            if self.verbose > 1:
-                                print(color.YELLOW, 'EXISTING DENDRITE FOUND. Cell {', cellDendrite_idx[0],',',j,'}; dendrite: ',cellDendrite_idx[1], \
-                                      '. Reinforcing ', np.count_nonzero(reinforcedSynapses_),' synapses. Existing synapses= ', tot_numSynapses_, color.END)
+                                                                                                                           prev_state=winnerCells_)
+                            print(color.YELLOW, 'EXISTING DENDRITE FOUND. Cell {', cellDendrite_idx[0],',',j,'}; dendrite: ',cellDendrite_idx[1], \
+                                  '. Reinforcing ', np.count_nonzero(reinforcedSynapses_),' synapses. Existing synapses= ', tot_numSynapses_, color.END)
                             
                             # Undoing the Previous Reinforcement of Dendrites and de-selecting
                             # it from 'winner_cells'
                             self.net_arch[bestMatch_CellDendrite[0], j].undo_cell_dendriteReinforcement(dendrite_idx=bestMatch_CellDendrite[1],
                                                                                                         reinforcedSynapses=reinforcedSynapses)
                             winner_cells.remove((bestMatch_CellDendrite[0], j))
-                            winner_cells.append((cellDendrite_idx[0], j))                    
-                            
-                    else:
-                        continue
+                            winner_cells.append((cellDendrite_idx[0], j))        
+        
                 
         return winner_cells          
                 
@@ -678,6 +732,7 @@ class HTM_NET():
                             continue                  
                     
                 else:
+                    
                     continue
                 
         return
@@ -735,14 +790,14 @@ class HTM_NET():
         
 
 class color:
-   PURPLE = '\033[95m'
+   PURPLE = '\033[95m' #
    CYAN = '\033[96m'
-   DARKCYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   DARKGREEN = '\033[32m' 
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
+   DARKCYAN = '\033[36m' #
+   BLUE = '\033[94m' #
+   GREEN = '\033[92m' #
+   DARKGREEN = '\033[32m' #
+   YELLOW = '\033[93m' #
+   RED = '\033[91m' #
    BOLD = '\033[1m'
    UNDERLINE = '\033[4m'
    END = '\033[0m'
@@ -750,6 +805,11 @@ class color:
 
 
 # ==========================ROUGH==============================================
+
+# =============================================================================
+# IMPORTANT:    There would be artefacts of 32-25 connected synapses on some 
+# dendrites.
+# =============================================================================
 
 # self.net_dims = np.array([self.M, self.N])
 
