@@ -1,5 +1,5 @@
 # Implicit Acquisition of Simple Reber Grammar in a Neocortex-inspired Neural Network
-(NOTE: This is my master's thesis' code repository)
+(My master's thesis' code repository)
 
 ## Project Summary
 The human brain seems to acquire sequential information – mainly, recognition and prediction of temporally-correlated patterns – almost seamlessly. Moreover, the acquisition is even implicit in some cases like language. In my thesis, I attempted to study this feature of the biological brain by addressing the question of implicit (unsupervised) learning of nontrivial and higher-order sequential information over time, which is also an important direction of inquiry that lacks a satisfactory solution in the problem domain of Sequence Learning.
