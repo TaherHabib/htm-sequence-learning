@@ -1,5 +1,9 @@
 # Implicit Acquisition of Simple Reber Grammar in a Neocortex-inspired Neural Network
-(Master's Thesis Code Repository)
+(NOTE: Master's Thesis Code Repository)
+
+### Abstract
+The human brain seems to acquire sequential information – mainly, recognition and prediction of temporally-correlated patterns – almost seamlessly, and, in most cases like language, implicitly.
+
 
 Numenta's [Hierarchical Temporal Memory model (2016)](https://numenta.com/neuroscience-research/research-publications/papers/why-neurons-have-thousands-of-synapses-theory-of-sequence-memory-in-neocortex/) is used on the problem domain of Artificial Grammar Learning (AGL). Benchmarks used from AGL are: learning Simple Reber Grammar (SRG) transition rules; and, learning Embedded Reber Grammar (ERG) transition rules.
 
