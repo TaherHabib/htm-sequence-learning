@@ -11,7 +11,7 @@ I use Numenta’s [Hierarchical Temporal Memory (HTM) (2016)](https://numenta.co
 
 
 ## Description of Issues 001-005
-```python
+~~~python
 
 Issue Description:
 ------------
@@ -37,7 +37,7 @@ Issue 005:
     next reber string in the input stream.
     In the current implementation of HTM, this issue is generally found to be in 5% of the total
     number of reber strings in the inputstream.
-```
+~~~
 
 ## Thesis
 The full thesis can be found [here](https://docs.google.com/document/d/10CVceFrXVdygoLiY0-jKl_dnbHttWX6Iyar5BQjbg8I/edit#heading=h.sd5d3mxt8686).
