@@ -10,7 +10,7 @@ I use Numenta’s [Hierarchical Temporal Memory (HTM) (2016)](https://numenta.co
 
 
 
-## Description of Issues 001-005
+#### Description of Issues 001-005
 ~~~
 
 Issue Description:
@@ -43,4 +43,4 @@ Issue 005:
 The full thesis can be found [here](https://docs.google.com/document/d/10CVceFrXVdygoLiY0-jKl_dnbHttWX6Iyar5BQjbg8I/edit#heading=h.sd5d3mxt8686).
 
 ## Presentation Slides
-Further details on the project, alongwith the underlying motivation can be found in the [slides](https://github.com/TaherHabib/sequence-learning-model/blob/master/Modelling%20Implicit%20Acquisition%20of%20Sequential%20Information%20Using%20a%20Neocortical%20Neural%20Network%20Hierarchical%20Temporal%20Memory.pdf).
+Presentation slides can be found [here](https://github.com/TaherHabib/sequence-learning-model/blob/master/Modelling%20Implicit%20Acquisition%20of%20Sequential%20Information%20Using%20a%20Neocortical%20Neural%20Network%20Hierarchical%20Temporal%20Memory.pdf).
