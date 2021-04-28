@@ -11,7 +11,7 @@ I use Numenta’s [Hierarchical Temporal Memory (HTM) (2016)](https://numenta.co
 
 
 ## Description of Issues 001-005
-~~~python
+~~~
 
 Issue Description:
 ------------
