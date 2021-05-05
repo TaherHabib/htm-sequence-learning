@@ -7,7 +7,13 @@ The human brain seems to acquire sequential information – mainly, recognition 
 I use Numenta’s [Hierarchical Temporal Memory (HTM) (2016)](https://numenta.com/neuroscience-research/research-publications/papers/why-neurons-have-thousands-of-synapses-theory-of-sequence-memory-in-neocortex/) – which deploys several architectural and functional features of the neocortex in addition to utilizing Hebbian plasticity based learning techniques. The task used in the experiments is to implicitly learn higher-order temporal dependencies in sentences (strings) generated from an artificial grammar, that is known to model the implicit acquisition mechanisms of language processing in the human brain.
 
 ## Repository Structure
-`experiment_modules/` directory contains python modules defining interfaces for an HTM cell, an HTM network, a Reber Grammar Generator and an Experimentor; along with all their corresponding functions used to perform different aspects of the experiment.
+- `experiment_modules/` directory contains python modules defining interfaces for an HTM cell, an HTM network, a Reber Grammar Generator and an Experimentor; along with all their corresponding functions used to perform different aspects of the experiment.
+- `notebooks/` directory contains the notebooks used to perform the diffent experiments in my thesis, as follows:
+-   implicit learning only a single Reber String by the HTM network, 
+-   learning of long-range dependencies, 
+-   im
+- `results/` directory contains
+- `ufuncs.py` is 
 
 
 #### Description of Issues 001-005
