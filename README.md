@@ -11,10 +11,10 @@ I use Numenta’s [Hierarchical Temporal Memory (HTM) (2016)](https://numenta.co
 - `notebooks/` directory contains the notebooks showcasing the diffent experiments in my thesis, as follows:
     - implicit learning of a single Reber String (e.g. _PVPVZ_) by the HTM network, 
     - learning of long-range dependencies, 
-    - aquiring SRG with pruning of dendrites based on `maxDendriteDormancy` parameter,
-    - aquiring SRG without pruning of dendrites.
-- `results/` directory contains
-- `ufuncs.py` is 
+    - implicitly learning SRG with pruning of dendrites based on `maxDendriteDormancy` parameter,
+    - implicitly learning SRG without pruning of dendrites.
+- `results/` directory contains some image files displaying network states and predictions for different Reber strings.
+- `ufuncs.py` contains some utility functions used in the experiments like computing dot product of two matrices, computing false match probability for SDRs given some specific network parameters, etc.
 
 
 #### Description of Issues 001-005
