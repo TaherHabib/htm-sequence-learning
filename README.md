@@ -46,11 +46,11 @@ Issue 005:
 ~~~
 
 ## Some Results
-### Learning a Single Reber String _PVPVZ_
+#### Learning a Single Reber String _PVPVZ_
 
-### Learning SRG with `maxDendriteDormancy` parameter set to `24*8`
+#### Learning SRG with `maxDendriteDormancy` parameter set to `24*8`
 
-### Learning SRG with `maxDendriteDormancy` parameter set to `inf`
+#### Learning SRG with `maxDendriteDormancy` parameter set to `inf`
 
 
 ## Thesis
