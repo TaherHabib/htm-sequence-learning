@@ -45,6 +45,14 @@ Issue 005:
     number of reber strings in the inputstream.
 ~~~
 
+## Some Results
+### Learning a Single Reber String _PVPVZ_
+
+### Learning SRG with `maxDendriteDormancy` parameter set to `24*8`
+
+### Learning SRG with `maxDendriteDormancy` parameter set to `inf`
+
+
 ## Thesis
 The full thesis can be found [here](https://docs.google.com/document/d/10CVceFrXVdygoLiY0-jKl_dnbHttWX6Iyar5BQjbg8I/edit?usp=sharing).
 
