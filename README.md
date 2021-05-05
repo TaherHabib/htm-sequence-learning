@@ -53,7 +53,7 @@ Issue 005:
 #### Learning SRG with `maxDendriteDormancy` parameter set to `inf`
 
 
-## Thesis
+## Thesis (Full Text)
 The full thesis can be found [here](https://docs.google.com/document/d/10CVceFrXVdygoLiY0-jKl_dnbHttWX6Iyar5BQjbg8I/edit?usp=sharing).
 
 ## Presentation Slides
