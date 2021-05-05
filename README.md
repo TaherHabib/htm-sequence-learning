@@ -1,4 +1,4 @@
-# Implicit Acquisition of Simple Reber Grammar in a Neocortex-inspired Neural Network
+# Implicit Acquisition of Simple Reber Grammar (SRG) in a Neocortex-inspired Neural Network
 (My master's thesis' code repository)
 
 ## Project Summary
@@ -8,10 +8,11 @@ I use Numenta’s [Hierarchical Temporal Memory (HTM) (2016)](https://numenta.co
 
 ## Repository Structure
 - `experiment_modules/` directory contains python modules defining interfaces for an HTM cell, an HTM network, a Reber Grammar Generator and an Experimentor; along with all their corresponding functions used to perform different aspects of the experiment.
-- `notebooks/` directory contains the notebooks used to perform the diffent experiments in my thesis, as follows:
-    - implicit learning only a single Reber String by the HTM network, 
+- `notebooks/` directory contains the notebooks showcasing the diffent experiments in my thesis, as follows:
+    - implicit learning of a single Reber String (e.g. _PVPVZ_) by the HTM network, 
     - learning of long-range dependencies, 
-    - im
+    - aquiring SRG with pruning of dendrites based on `maxDendriteDormancy` parameter,
+    - aquiring SRG without pruning of dendrites.
 - `results/` directory contains
 - `ufuncs.py` is 
 
