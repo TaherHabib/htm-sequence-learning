@@ -141,17 +141,6 @@ def full_pickle(filename=None, data=None):
     '''
     Saves the 'data' with the 'filename' as pickle    
 
-    Parameters
-    ----------
-    filename : TYPE
-        DESCRIPTION.
-    data : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
     '''
     
     f = open(filename+'.pickle', 'wb')
@@ -163,16 +152,6 @@ def full_pickle(filename=None, data=None):
 def unpickle(filename=None):
     '''
     Loads and returns a pickled object.
-
-    Parameters
-    ----------
-    filename : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    data : TYPE
-        DESCRIPTION.
 
     '''
     
@@ -188,17 +167,6 @@ def compress_pickle(filename=None, data=None):
     '''
     Pickle a file and then compress it into BZ2 file. 
 
-    Parameters
-    ----------
-    filename : TYPE
-        DESCRIPTION.
-    data : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
     '''
     
     with bz2.BZ2File(filename+'.pbz2', 'wb') as f: 
@@ -210,16 +178,6 @@ def decompress_pickle(filename=None):
     '''
     Load any compressed pickle file.
 
-    Parameters
-    ----------
-    filename : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    data : TYPE
-        DESCRIPTION.
-
     '''
     
     data = bz2.BZ2File(filename+'.pbz2', 'rb')
@@ -227,7 +185,6 @@ def decompress_pickle(filename=None):
     
     return data
 
-# This was added using nano editor at the command terminal :D
 
 #_______________________________NOTES_________________________________________
 
