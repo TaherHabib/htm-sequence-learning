@@ -69,46 +69,7 @@ def get_idx_nonZeroElements(matrix=None):
     
     return list_idx_nonZeroElements
 
-def reberstring_length(rg_io):
-    
-    return len(rg_io[0])
 
-
-def get_graph_allPossibleTransitions(graph=None):
-    
-    all_possibleTransitions = []
-    
-    for i, subsequent_1 in enumerate(graph[0][1]):
-        transition_to_1 = graph[0][0][i]
-    
-        for j, subsequent_2 in enumerate(graph[transition_to_1][1]):
-            all_possibleTransitions.append('A'+subsequent_1+subsequent_2)
-    
-    for startNode in graph:
-        if startNode[1] == 'Z':
-            continue
-        
-        for i, antecedent in enumerate(startNode[1]):
-            if len(startNode[1]) == 1:
-                transition_to_1 = startNode[0]
-            else:
-                transition_to_1 = startNode[0][i]
-                
-            
-            for j, subsequent_1 in enumerate(graph[transition_to_1][1]): 
-                
-                if graph[transition_to_1][1] == 'Z':
-                    all_possibleTransitions.append(antecedent+subsequent_1)
-                    break
-                elif len(graph[transition_to_1][1]) == 1:
-                    transition_to_2 = graph[transition_to_1][0]
-                else:
-                    transition_to_2 = graph[transition_to_1][0][j]
-                
-                for subsequent_2 in graph[transition_to_2][1]:
-                    all_possibleTransitions.append(antecedent+subsequent_1+subsequent_2)        
-                
-    return all_possibleTransitions
 
 
 def false_match_prob(k=None,tot_neurons=None,connSynapses_perdend=None,nmda_threshold=None):
