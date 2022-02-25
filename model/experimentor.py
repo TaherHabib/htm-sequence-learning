@@ -249,39 +249,3 @@ class color:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     END = '\033[0m'
-
-# ================================ROUGH NOTES=======================================
-
-# _________I_________
-# In the original HTM, M=32, N=2048, k=40. 
-# Total number of cells = 32*2048 =  65,536
-# Initial (before SDR learning) activity level in the network = 40*32 = 1280 (~2%)
-# After SDR learning, activity is expected to reduce to 40*1 = 30 (~0.05%)
-
-# Max nof dendrites per neuron = 128
-# Max nof synapses per dendrites = 128 (approx. max. 0.2% of the cells are connected 
-# to a single dendrite)
-# Thus, nof connected synapses per neuron = 128*128 = 16,384, which is 25% of 
-# the totol network size.
-
-# NMDA threshold = 15. 
-# NMDA threshold/nof synapses per dendrites = 15/128 ~ 11.7%
-
-# False match probability = 3.7848536276106233e-31
-
-# ________II__________
-# In my HTM version, M=16, N=32*7, k=32.
-# Total number of cells = 16*32*7 = 3584. 
-# Initial (before SDR learning) activity level in the network = 32*16 = 512 (~14%)
-# After SDR learning, activity is expected to reduce to 32*1 = 32 (~0.9%)
-
-# Max nof dendrites per neuron = 128
-# Max nof synapses per dendrites = 32 (approx. max. 2.3% of the cells are connected 
-# to a single dendrite)
-# Thus, nof connected synapses per neuron = 32*32 = 1024, which is ~73% of 
-# the totol network size.
-
-# NMDA threshold = 20.
-# NMDA threshold/nof synapses per dendrites = 20/32 ~ 63%
-
-# False match probability = 1.0291712295744538e-36
