@@ -5,7 +5,7 @@ MODULE DESCRIPTION:
 This module is used to generate Simple Reber Grammar strings, as inputs to the HTM network
 alongwith the corresponding output strings to evaluate the network's performance.
 
-- The interface is defined using the Reber_Grammar() class in reber_grammar.py.
+- The interface is defined using the Reber_Grammar() class in ReberGrammar.py.
 - Five different (Markovian) transition graphs are available to choose from.
 
 """
@@ -16,7 +16,7 @@ import logging
 import json
 from pathlib import Path
 import numpy as np
-from htm_sequence_learning.model.reber_grammar import Reber_Grammar
+from htm_sequence_learning.reber_grammar.ReberGrammar import Reber_Grammar
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -32,8 +32,10 @@ parser.add_argument('graph_idx', action='store', nargs='?', default=1, type=int,
 parser.add_argument('reber_strings', action='store', type=str, help='')
 parser.add_argument('num_strings', action='store', type=int, help='')
 parser.add_argument('save_to_disk', action='store', nargs='?', default=True, help='')
-parser.add_argument('-cc', dest='columns_per_char', action='store', nargs='?', const=32, default=32, help='')
-parser.add_argument('-m', '--max_length', dest='max_string_length', action='store', default=None, help='')
+parser.add_argument('-cc', dest='columns_per_char', action='store', nargs='?', const=32, default=32,
+                    help='')
+parser.add_argument('-m', '--max_length', dest='max_string_length', action='store', default=1000, type=int,
+                    help='')
 parser.add_argument('-e', '--do_erg', dest='do_erg', action='store', nargs='?', const=True, default=False,
                     help='')
 parser.add_argument('-s', '--sort', dest='sort_by_length', action='store', nargs='?', const=True, default=False,
