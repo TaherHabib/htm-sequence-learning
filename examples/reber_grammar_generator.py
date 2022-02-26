@@ -26,6 +26,7 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s : %(levelname)s :
 logger.addHandler(handler)
 
 ROOT = os.path.abspath(Path(__file__).parent.parent)
+data_save_path = os.path.join(ROOT, 'data', 'reber_strings_dataset')
 
 parser = argparse.ArgumentParser(description='Generator for Reber Grammar Strings')
 parser.add_argument('graph_idx', action='store', nargs='?', default=1, type=int, help='')
@@ -51,18 +52,17 @@ if __name__ == '__main__':
 
     if args.reber_strings == 'mix':
         reber_strings = args.reber_strings
-        save_path = os.path.join(ROOT, 'data', 'reber_strings_dataset', 'mix')
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
+        if not os.path.exists(data_save_path):
+            os.mkdir(data_save_path)
     elif '.json' in args.reber_strings:
-        with open(os.path.join(ROOT, 'configs', args.reber_strings), 'r') as strings:
+        with open(os.path.join(ROOT, 'configs', 'rebergrammar', args.reber_strings), 'r') as strings:
             reber_strings = json.load(strings)
-        save_path = os.path.join(ROOT, 'data', 'reber_strings_dataset', 'non_mix')
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
+        if not os.path.exists(data_save_path):
+            os.mkdir(data_save_path)
     else:
         raise ValueError('Please provide a valid file format (.json only) containing a dictionary with input-output'
-                         'reber strings to be generated for the input data stream.')
+                         'reber strings to be generated for the input data stream. OR, simply provide the string '
+                         '\'mix\' to generate a random mixed bag set of reber strings')
 
     logger.info('Generating Input Strings and Predictions...')
     rg_inputoutput = rg.generate_InputOutput(do_erg=args.do_erg,
@@ -73,11 +73,11 @@ if __name__ == '__main__':
     # Saving to disk
     if args.save_to_disk:
         logger.info('Saving to disk...')
-        if args.reber_strings == 'mix':
+        if args.reber_strings == 'mix_reber_strings':
             file_name = 'graph{}_numStrings{}_erg{}'.format(args.graph_idx, args.num_strings, args.do_erg)
-            np.save(arr=rg_inputoutput, file=os.path.join(save_path, file_name + '.npy'))
+            np.save(arr=rg_inputoutput, file=os.path.join(data_save_path, file_name + '.npy'))
         else:
             file_name = 'graph{}_{}_numStrings{}_erg{}'.format(args.graph_idx, args.reber_strings.replace('.json', ''),
                                                                args.num_strings, args.do_erg)
-            np.save(arr=rg_inputoutput, file=os.path.join(save_path, file_name + '.npy'))
+            np.save(arr=rg_inputoutput, file=os.path.join(data_save_path, file_name + '.npy'))
         logger.info('Generated Reber Strings inputs-outputs saved successfully!')

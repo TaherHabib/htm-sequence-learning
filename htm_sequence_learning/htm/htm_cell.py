@@ -9,7 +9,7 @@ Implementation of the HTM cell interface using HTM_CELL() class.
 import numpy as np
 import random
 
-from ufuncs import dot_prod, get_idx_nonZeroElements
+from data.data_utils import dot_prod, get_idx_nonZeroElements
 
 class HTM_CELL():
     

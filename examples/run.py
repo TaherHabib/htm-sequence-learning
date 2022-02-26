@@ -14,7 +14,6 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s : %(levelname)s :
 logger.addHandler(handler)
 
 ROOT = os.path.abspath(Path(__file__).parent.parent)
-print(ROOT)
 
 parser = argparse.ArgumentParser(description='Train an HTM model on generated Reber Grammar Strings')
 parser.add_argument('-dc', '--default_config', dest='run_default_config', action='store', nargs='?', const=True,
@@ -27,7 +26,7 @@ parser.add_argument('-v', '--verbosity', dest='verbosity_level', action='store',
                     type=int, help='')
 
 default_config = 'default_config.json'
-default_dataset = 'reber_mix_2000strings.npy'
+default_dataset = 'graph1_numStrings2000_ergFalse.npy'
 
 if __name__ == '__main__':
 
@@ -36,24 +35,21 @@ if __name__ == '__main__':
     # Setting up model configuration
     if args.config_json is not None:
         logger.info('Building HTM network with configurations from: {}'.format(args.config_json))
-        with open(os.path.join(ROOT, 'configs', args.config_json), 'r') as config:
+        with open(os.path.join(ROOT, 'configs', 'htm', args.config_json), 'r') as config:
             model_params = json.load(config)
     else:
         logger.info('Building HTM network with default configurations from: {}'.format(default_config))
-        with open(os.path.join(ROOT, 'configs', default_config), 'r') as config:
+        with open(os.path.join(ROOT, 'configs', 'htm', default_config), 'r') as config:
             model_params = json.load(config)
 
     # Setting up Reber strings dataset
     if args.dataset_npy is not None:
         logger.info('Using dataset: {}'.format(args.dataset_npy))
-        with open(
-                os.path.join(ROOT, 'data', 'reber_strings_dataset', args.dataset_npy),
-                'r') as data:
+        with open(os.path.join(ROOT, 'data', 'reber_strings_dataset', args.dataset_npy), 'r') as data:
             dataset = numpy.load(data)
     else:
         logger.info('Using default dataset: {}'.format(default_dataset))
-        with open(os.path.join(ROOT, 'data', 'reber_strings_dataset', default_dataset),
-                  'r') as data:
+        with open(os.path.join(ROOT, 'data', 'reber_strings_dataset', default_dataset), 'r') as data:
             dataset = numpy.load(data)
 
     # Running the model
