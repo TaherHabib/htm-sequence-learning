@@ -74,3 +74,8 @@ def count_allTransitions(graph_idx, in_reber_strings):
                     counter += 1
         dict_count_allTransitions[transition] = counter
     return dict_count_allTransitions
+
+
+def get_graph_from_dataset(dataset_name):
+    graph_idx = dataset_name.split('_')[0][-1]
+    return graph_idx

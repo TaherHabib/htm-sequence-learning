@@ -4,7 +4,10 @@ import logging
 import json
 import numpy
 from pathlib import Path
-
+from htm_sequence_learning.reber_grammar.utils import get_graph_from_dataset
+from htm_sequence_learning.htm.utils import get_A_winner_cells
+from htm_sequence_learning.reber_grammar.ReberGrammar import Reber_Grammar
+from htm_sequence_learning.htm.htm_net import HTM_NET
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -47,12 +50,38 @@ if __name__ == '__main__':
         logger.info('Using dataset: {}'.format(args.dataset_npy))
         with open(os.path.join(ROOT, 'data', 'reber_strings_dataset', args.dataset_npy), 'r') as data:
             dataset = numpy.load(data)
+        graph_idx = get_graph_from_dataset(args.dataset_npy)
     else:
         logger.info('Using default dataset: {}'.format(default_dataset))
         with open(os.path.join(ROOT, 'data', 'reber_strings_dataset', default_dataset), 'r') as data:
             dataset = numpy.load(data)
+        graph_idx = get_graph_from_dataset(default_dataset)
+
+    # Defining Grammar object for later downstream processing tasks
+    grammar = Reber_Grammar(columns_per_char=model_params['columns_per_char'],
+                            graph_idx=graph_idx)
+
+    # Get 'A' winner cells
+    A_winner_cells = get_A_winner_cells(rg=grammar, M=model_params['cells_per_column'])
+
+    # Get Onehot for 'Z'
+    z_onehot = grammar.CharToOnehot('Z')
+
+    # Initializing HTM Network
+    htm_network = HTM_NET(cellsPerColumn=self.M, numColumns=self.N, columnsPerChar=self.k,
+                          maxDendritesPerCell=maxDendritesPerCell,
+                          maxSynapsesPerDendrite=maxSynapsesPerDendrite,
+                          nmdaThreshold=nmdaThreshold, permThreshold=permThreshold,
+                          learningThreshold=learningThreshold,
+                          permInit=permInit, permInit_sd=permInit_sd,
+                          perm_decrement=perm_decrement, perm_increment=perm_increment,
+                          perm_decay=perm_decay,
+                          dendriteDuty_UpperLimit=self.maxDendriteDormancy,
+                          verbose=verbose)
 
     # Running the model
+    # TODO: call the experimentor module here to run the experiment
+
     model_params = {
         'num_chars': 7,
         'columns_per_char': 32,

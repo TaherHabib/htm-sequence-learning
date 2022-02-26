@@ -43,7 +43,6 @@ import copy
 import random
 
 from htm_net import HTM_NET
-from rebergrammar_generator import *
 
 
 class Experimentor:
@@ -64,14 +63,11 @@ class Experimentor:
         self.N = numColumns
         self.k = columnsPerChar
 
-        # TODO: write a try-except block to check that correct parameters are passed to rebergrammar_generator.yp
         self.rg = rg
         self.rg_inputoutput = rg_inputoutput
         self.nof_strings = len(rg_inputoutput)
         self.verbose = verbose
 
-        # 'maxDendriteDormancy' is kept at average length of a reber string * 30.
-        # For an explanation, see the full text of thesis, pg. 38.
         self.maxDendriteDormancy = 8 * 30
 
         # Onehot for 'Z'

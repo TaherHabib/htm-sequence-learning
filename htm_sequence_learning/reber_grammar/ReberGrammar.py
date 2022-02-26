@@ -283,7 +283,7 @@ class Reber_Grammar:
         """
 
         charOnehot = np.zeros(self.N, dtype=np.int8)
-        charOnehot[self.df_CharsToMinicols[char]] = 1
+        charOnehot[self.df_CharsToMinicols[char.upper()]] = 1
         return charOnehot
 
     def in_grammar(self, word):

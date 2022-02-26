@@ -9,9 +9,10 @@ Implementation of the HTM cell interface using HTM_CELL() class.
 import numpy as np
 import random
 
-from data.data_utils import dot_prod, get_idx_nonZeroElements
+from htm_sequence_learning.htm.utils import dot_prod, get_idx_nonZeroElements
 
-class HTM_CELL():
+
+class HTM_CELL:
     
     def __init__(self, cellsPerColumn=None, numColumns=None, columnsPerChar=None,
                  maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 

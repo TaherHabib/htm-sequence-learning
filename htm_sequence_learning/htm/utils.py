@@ -6,6 +6,7 @@ Utility function used in HTM model
 """
 
 import numpy as np
+import random
 from scipy.special import comb as ncr
 
 
@@ -95,3 +96,12 @@ def false_match_prob(k=None, tot_neurons=None, connSynapses_perdend=None, nmda_t
     prob = summ / ncr(tot_neurons, k, exact=True)
 
     return prob
+
+
+def get_A_winner_cells(rg=None, M=None):
+    A_winner_cells = np.zeros([M, rg.N], dtype=np.int8)
+    random.seed(1)
+    A_winnercells_i = random.choices(np.arange(M), k=rg.k)
+    for i in range(rg.k):
+        A_winner_cells[A_winnercells_i[i], rg.df_CharsToMinicols['A'][i]] = 1
+    return A_winner_cells

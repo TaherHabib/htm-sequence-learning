@@ -11,10 +11,27 @@ import numpy as np
 import random 
 
 from htm_cell import HTM_CELL
-from .ufuncs import dot_prod, get_idx_nonZeroElements
+from htm_sequence_learning.htm.utils import dot_prod, get_idx_nonZeroElements
 
+model_params = {
+        'num_chars': 7,
+        'columns_per_char': 32,
+        'num_columns': 32 * 7,
+        'cells_per_column': 16,
+        'max_dendrites_per_cell': 128,
+        'max_synapses_per_dendrite': 49,  # (=cols_per_char + (nmda-1))
+        'nmda_threshold': 18,
+        'permanence_threshold': 0.50,
+        'learning_threshold': 11,
+        'permanence_init': 0.25,
+        'permanence_init_sd': 0.002,
+        'permanence_decrement': 0.1,
+        'permanence_increment': 0.2,  # 2*perm_decrement
+        'permanence_decay': 0.02,  # 0.2*perm_decrement
+        'max_dendrite_dormancy': 8 * 30
+    }
 
-class HTM_NET():
+class HTM_NET:
 
     def __init__(self, numColumns=None, cellsPerColumn=None, columnsPerChar=None,
                  maxDendritesPerCell=None, maxSynapsesPerDendrite=None, 
@@ -26,8 +43,8 @@ class HTM_NET():
                  dendriteDuty_UpperLimit=None,
                  verbose=2):
         
-        self.M = cellsPerColumn # 8
-        self.N = numColumns # 175
+        self.M = cellsPerColumn
+        self.N = numColumns
         self.k = columnsPerChar
         
         self.maxDendritesPerCell = maxDendritesPerCell
