@@ -1,46 +1,3 @@
-"""
-MODULE DESCRIPTION:
--------------------
-
-This module runs the main experiments using the Experimentor() class.
-
-- One can choose HTM network structural and learning parameters such as the number of columns and cells per 
-column, permanence increment/decrement etc.
-
-- Reber Grammar object (from the ReberGrammar.py module) and input(output-)stream – variables 'rg' and
-'rg_inputoutput'– are required to be passed in the Experimentor() object.
-
-
-OTHER NOTES:
-------------
-Issue 001: 
-    When a column bursts, but no (matching) dendrite with connections to the previous timestep's activity 
-    are found AND when all HTM cells in a given minicolumn run out of their capacity to grow any new
-    dendrite (given by 'maxDendritesPerCell').
-    	
-Issue 002:
-    When a dendrite has more synapses than its capacity given by 'maxSynapsesPerDendrite'.
-    
-Issue 003:
-    When multiple matching dendrites are found in a bursting column.
-    
-Issue 004:
-    To be read in the same context as Issue 001. See htm_net.py.
-    
-Issue 005:
-    This issue reports a fundamental flaw in the learning of SDRs. If the total number of cells with 
-    permanence reinforcement on any one of their dendrites at any given timestep during execcution
-    falls below the set NMDA threshold of the network, issue 005 is reported at the output terminal.
-    It breaks the execution of the program for the current reber string and starts execution from the
-    next reber string in the input stream.
-    In the current implementation of HTM, this issue is generally found to be in 5% of the total
-    number of reber strings in the inputstream.
-"""
-
-import numpy as np
-import pandas as pd
-import copy
-import random
 
 from htm_net import HTM_NET
 
@@ -82,16 +39,7 @@ class Experimentor:
 
         if htm_network == None:
             # Initializing Network
-            self.htm_network = HTM_NET(cellsPerColumn=self.M, numColumns=self.N, columnsPerChar=self.k,
-                                       maxDendritesPerCell=maxDendritesPerCell,
-                                       maxSynapsesPerDendrite=maxSynapsesPerDendrite,
-                                       nmdaThreshold=nmdaThreshold, permThreshold=permThreshold,
-                                       learningThreshold=learningThreshold,
-                                       permInit=permInit, permInit_sd=permInit_sd,
-                                       perm_decrement=perm_decrement, perm_increment=perm_increment,
-                                       perm_decay=perm_decay,
-                                       dendriteDuty_UpperLimit=self.maxDendriteDormancy,
-                                       verbose=verbose)
+            self.htm_network = HTM_NET()
         else:
             self.htm_network = htm_network
 

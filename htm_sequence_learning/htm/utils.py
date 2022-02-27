@@ -10,6 +10,10 @@ import random
 from scipy.special import comb as ncr
 
 
+def get_num_columns(columns_per_char=None, chars=None):
+    return columns_per_char * len(chars)
+
+
 def dot_prod(matrix_1=None, matrix_2=None):
     """
     Computes the element-wise multiplication of an MxN matrix with a list of 'n'

@@ -19,3 +19,6 @@ scipy==1.8.0
     # via -r requirements.in
 six==1.16.0
     # via python-dateutil
+
+setuptools~=58.0.4
+matplotlib~=3.5.1

@@ -15,7 +15,8 @@ import pandas as pd
 import random
 
 from .graph_configs import dict_reber_graphs, list_graphs, chars, embedded_chars
-from htm_sequence_learning.reber_grammar.utils import reberstring_length, get_graph_allPossibleTransitions
+from .utils import reberstring_length, get_graph_allPossibleTransitions
+from htm_sequence_learning.htm.utils import get_num_columns
 
 
 class Reber_Grammar:
@@ -36,14 +37,10 @@ class Reber_Grammar:
         self.embedded_chars = embedded_chars
         self.graph = dict_reber_graphs[list_graphs[graph_idx]]
         self.k = columns_per_char
-        self.N = self.get_num_columns
+        self.N = get_num_columns(columns_per_char, chars)
         self.df_CharsToMinicols = self.get_charsToMinicols  # DataFrame with cols: 'A', 'T', 'P', etc. each with 'k'
         # minicolumn indices corresponding to that character.
         self.all_possibleTransitions = get_graph_allPossibleTransitions(self.graph)
-
-    @property
-    def get_num_columns(self):
-        return self.k * len(self.chars)
 
     @property
     def get_charsToMinicols(self):

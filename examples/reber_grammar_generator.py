@@ -33,7 +33,7 @@ parser.add_argument('graph_idx', action='store', nargs='?', default=1, type=int,
 parser.add_argument('reber_strings', action='store', type=str, help='')
 parser.add_argument('num_strings', action='store', type=int, help='')
 parser.add_argument('save_to_disk', action='store', nargs='?', default=True, help='')
-parser.add_argument('-cc', dest='columns_per_char', action='store', nargs='?', const=32, default=32,
+parser.add_argument('-cc', '--columns_per_char', dest='columns_per_char', action='store', default=32, type=int,
                     help='')
 parser.add_argument('-m', '--max_length', dest='max_string_length', action='store', default=1000, type=int,
                     help='')
