@@ -35,10 +35,12 @@ def compute_input_stats(rg_iostream=None, print_all=False, save_figures=False):
     # # first letter 'A' ([0]) and finding its length gives us the value of N.
 
     graph_idx = get_graph_from_dataset(rg_iostream)
+    print(type(graph_idx))
 
     logger.info('Reading input stream file...')
     with open(os.path.join(data_path, rg_iostream.replace('.npy', '') + '.npy'), 'rb') as stream:
         rg_inputoutput = np.load(stream, allow_pickle=True)
+
     in_reber_strings = [rg_inputoutput[i][0] for i in range(len(rg_inputoutput))]
 
     dict_count_allTransitions = count_allTransitions(graph_idx=graph_idx,
@@ -78,9 +80,9 @@ def compute_input_stats(rg_iostream=None, print_all=False, save_figures=False):
     plt.xticks(fontsize=18)
     plt.yticks(fontsize=18)
     plt.text(x=binEdges[-1] / 2, y=0.8 * y[0], s=f'Mean Length of Reber String: {np.mean(len_reber_strings)}',
-             fontsize=20)
+             fontsize=17)
     plt.text(x=binEdges[-1] / 2, y=0.7 * y[0], s=f'Median Length of Reber String: {np.median(len_reber_strings)}',
-             fontsize=20)
+             fontsize=17)
     plt.grid(True, linestyle="--", color='black', alpha=0.4)
     if save_figures:
         fig_name = 'String_length_dist_{}'.format(rg_iostream.replace('.npy', ''))

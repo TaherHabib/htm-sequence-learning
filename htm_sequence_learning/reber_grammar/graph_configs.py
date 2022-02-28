@@ -6,8 +6,8 @@ dict_reber_graphs = {
 
     'graph_2': [[(1, 5), ('T', 'P')], [(1, 2), ('S', 'P')],
                 [(3, 5), ('V', 'X')], [(6), ('Z')],
-                [(4, 3), ('T', 'X')], [(1, 4), ('V', 'S')]],  # the one used as a standard. Doesn't have a uniform
-                                                              # distribution of trigrams.
+                [(4, 3), ('T', 'X')], [(1, 4), ('V', 'S')]],  # the one used as a standard (and in the thesis).
+                                                              # Doesn't have a uniform distribution of trigrams.
     'graph_3': [[(1, 5), ('T', 'P')], [(1, 2), ('S', 'P')],
                 [(3, 5), ('V', 'X')], [(6), ('Z')],
                 [(4, 3), ('T', 'X')], [(2, 4), ('V', 'S')]],
