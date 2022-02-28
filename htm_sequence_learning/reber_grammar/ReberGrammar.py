@@ -35,7 +35,7 @@ class Reber_Grammar:
 
         self.chars = chars
         self.embedded_chars = embedded_chars
-        self.graph = dict_reber_graphs[list_graphs[graph_idx]]
+        self.graph = dict_reber_graphs[list_graphs[graph_idx-1]]
         self.k = columns_per_char
         self.N = get_num_columns(columns_per_char, chars)
         self.df_CharsToMinicols = self.get_charsToMinicols  # DataFrame with cols: 'A', 'T', 'P', etc. each with 'k'

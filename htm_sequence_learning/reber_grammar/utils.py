@@ -57,9 +57,9 @@ def get_graph_allPossibleTransitions(graph):
     return all_possibleTransitions
 
 
-def count_allTransitions(graph_idx, in_reber_strings):
+def count_allTransitions(graph_idx=None, in_reber_strings=None):
     dict_count_allTransitions = {}
-    graph = dict_reber_graphs[list_graphs[graph_idx]]
+    graph = dict_reber_graphs[list_graphs[graph_idx-1]]
     all_possible_transitions = get_graph_allPossibleTransitions(graph=graph)
     for transition in all_possible_transitions:
         counter = 0
@@ -78,4 +78,4 @@ def count_allTransitions(graph_idx, in_reber_strings):
 
 def get_graph_from_dataset(dataset_name):
     graph_idx = dataset_name.split('_')[0][-1]
-    return graph_idx
+    return int(graph_idx)
