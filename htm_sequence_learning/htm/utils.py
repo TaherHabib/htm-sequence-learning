@@ -102,7 +102,7 @@ def false_match_prob(k=None, tot_neurons=None, connSynapses_perdend=None, nmda_t
     return prob
 
 
-def get_A_winner_cells(rg=None, M=None):
+def A_winner_cells(rg=None, M=None):
     A_winner_cells = np.zeros([M, rg.N], dtype=np.int8)
     random.seed(1)
     A_winnercells_i = random.choices(np.arange(M), k=rg.k)

@@ -14,7 +14,7 @@ with open(path.join(ROOT, "requirements.txt")) as f:
 setup(
     name='htm-sequence-learning',
     author='TaherHabib',
-    url='https://github.com/TaherHabib/sequence-learning-model',
+    url='https://github.com/TaherHabib/htm-sequence-learning',
     description='Numenta\'s HTM model on Reber Grammar Sequence Learning',
     packages=find_packages(),
     install_requires=requirements,

@@ -5,9 +5,10 @@ import json
 import numpy as np
 from pathlib import Path
 from htm_sequence_learning.reber_grammar.utils import get_graph_from_dataset
-from htm_sequence_learning.htm.utils import get_A_winner_cells
+from htm_sequence_learning.htm.utils import A_winner_cells
 from htm_sequence_learning.reber_grammar.ReberGrammar import Reber_Grammar
 from htm_sequence_learning.htm.htm_net import HTM_NET
+from experimentor import run_experiment
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -29,7 +30,7 @@ parser.add_argument('-c', '--config', dest='config_json', action='store', defaul
                     help='')
 parser.add_argument('-d', '--dataset', dest='dataset_npy', action='store', default=None, type=str,
                     help='')
-parser.add_argument('-v', '--verbosity', dest='verbosity_level', action='store', default=1, choices=[0, 1, 2, 3],
+parser.add_argument('-v', '--verbosity', dest='verbosity_level', action='store', default=1, choices=[0, 1, 2],
                     type=int, help='')
 
 default_config = 'default_config.json'
@@ -61,15 +62,19 @@ if __name__ == '__main__':
             dataset = np.load(data)
         graph_idx = get_graph_from_dataset(default_dataset)
 
-    # Defining Grammar object for later downstream processing tasks
+    logger.info('Defining Grammar object for later downstream processing tasks')
     grammar = Reber_Grammar(columns_per_char=model_params['columns_per_char'], graph_idx=graph_idx)
     # Get 'A' winner cells
-    A_winner_cells = get_A_winner_cells(rg=grammar, M=model_params['cells_per_column'])
+    A_winner_cells = A_winner_cells(rg=grammar, M=model_params['cells_per_column'])
     # Get Onehot for 'Z'
     z_onehot = grammar.CharToOnehot('Z')
 
-    # Initializing HTM Network
+    logger.info('Initializing HTM Network')
     htm_network = HTM_NET.from_json(model_params=model_params, verbosity=args.verbosity_level)
 
-    # Running the model
-    # TODO: call the experimentor module here to run the experiment
+    logger.info('Running the model...')
+    run_experiment(data=dataset,
+                   htm_network=htm_network,
+                   A_winner_cells=A_winner_cells,
+                   z_onehot=z_onehot,
+                   verbosity=args.verbosity_level)
