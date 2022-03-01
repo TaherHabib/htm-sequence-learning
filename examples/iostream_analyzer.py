@@ -85,7 +85,7 @@ def compute_input_stats(rg_iostream=None, print_all=False, save_figures=False):
              fontsize=17)
     plt.grid(True, linestyle="--", color='black', alpha=0.4)
     if save_figures:
-        fig_name = 'String_length_dist_{}'.format(rg_iostream.replace('.npy', ''))
+        fig_name = 'String_length_dist_{}.svg'.format(rg_iostream.replace('.npy', ''))
         plt.savefig(fname=os.path.join(fig_path, fig_name), format='svg')
         logger.info('Figure saved in svg format at {}.svg.'.format(os.path.join(fig_path, fig_name)))
     plt.show()
@@ -103,7 +103,7 @@ def compute_input_stats(rg_iostream=None, print_all=False, save_figures=False):
     plt.yticks(fontsize=15)
     plt.grid(True, linestyle="--", color='black', alpha=0.4)
     if save_figures:
-        fig_name = 'Transitions_dist_{}'.format(rg_iostream.replace('.npy', ''))
+        fig_name = 'Transitions_dist_{}.svg'.format(rg_iostream.replace('.npy', ''))
         plt.savefig(fname=os.path.join(fig_path, fig_name), format='svg')
         logger.info('Figure saved in svg format at {}.svg.'.format(os.path.join(fig_path, fig_name)))
     plt.show()
