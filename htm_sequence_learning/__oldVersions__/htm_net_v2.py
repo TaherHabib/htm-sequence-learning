@@ -30,8 +30,8 @@ import numpy as np
 import pandas as pd
 import random 
 
-from htm_cell_v2 import HTM_CELL
-from ufuncs import dot_prod, get_idx_nonZeroElements
+from htm_cell_v1 import HTM_CELL
+from ..htm.utils import dot_prod, get_idx_nonZeroElements
 
 
 class HTM_NET():
@@ -408,7 +408,7 @@ class HTM_NET():
                                                                                                                     prev_winnerCells=prev_winnerCells)
                     print(color.YELLOW, 'Growing ', total_newSynapses,' new Synapses.', color.END)                    
                     
-                elif len(newSynapsesToGrow) < self.nmdaThreshold and len(list_prev_winnerCells) < self.maxSynapsesPerDendrite:
+                #elif len(newSynapsesToGrow) < self.nmdaThreshold and len(list_prev_winnerCells) < self.maxSynapsesPerDendrite:
                     
                 
                 # 2. When the 'bestMatch' dendrite has NO capacity to grow new 

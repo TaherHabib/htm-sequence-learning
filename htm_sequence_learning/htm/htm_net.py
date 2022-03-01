@@ -413,7 +413,7 @@ class HTM_NET:
             # =============================CASE: NO MATCHING DENDRITE FOUND=============================================
             # Grow a new one on least used cell in the column.
             if maxOverlap_bySynapses <= self.learning_threshold:
-                # Checking for the condition where all <maxDendritesPerCell> dendrtes are used on every cell and
+                # Checking for the condition where all <maxDendritesPerCell> dendrites are used on every cell and
                 # still NO Match was found.
                 if np.amax(cells_numUnusedDendrites) == 0:
                     print(color.RED, color.BOLD, ':::::::::::::::::::::::::::::::::::::::::::Issue 001 in col: ', j,
@@ -648,7 +648,7 @@ class HTM_NET:
                                                                                        prev_state=prev_state,
                                                                                        decay=True)
 
-    def update_net_dendriteDutyCycle(self):
+    def update_net_dendrite_dutycycle(self):
         """
         Used to update the duty cycle of every dendrite in the network.
         - Decreases an existing dendrite's duty cycle by 1.
@@ -678,7 +678,7 @@ class HTM_NET:
                 else:
                     continue
 
-    def prune_net_permanences(self):
+    def normalize_net_permanence(self):
         """
         This function ensures that the permanence levels of all synapses in the network remains between 0 and 1
         at all times.

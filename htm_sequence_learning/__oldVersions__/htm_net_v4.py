@@ -36,8 +36,8 @@ import numpy as np
 import pandas as pd
 import random 
 
-from htm_cell_v2 import HTM_CELL
-from ufuncs import dot_prod, get_idx_nonZeroElements
+from htm_cell_v1 import HTM_CELL
+from ..htm.utils import dot_prod, get_idx_nonZeroElements
 
 
 class HTM_NET():
