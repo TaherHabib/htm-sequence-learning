@@ -39,6 +39,7 @@ class Reber_Grammar:
         self.k = columns_per_char
         self.N = get_num_columns(columns_per_char, chars)
         self.df_CharsToMinicols = self.get_charsToMinicols  # DataFrame with cols: 'A', 'T', 'P', etc. each with 'k'
+        self.axis_MinicolsToChars = self.get_axis
         # minicolumn indices corresponding to that character.
         self.all_possibleTransitions = get_graph_allPossibleTransitions(self.graph)
 
@@ -50,10 +51,17 @@ class Reber_Grammar:
         random.seed(1)
         random.shuffle(minicolumns)
         for i, sym in enumerate(chars):
-            mc = minicolumns[i * self.k:(i + 1) * self.k]
+            mc = minicolumns[i * self.k : (i + 1) * self.k]
             df_CharsToMinicols[sym] = np.sort(mc, kind='mergesort')
 
         return df_CharsToMinicols
+
+    @property
+    def get_axis(self):
+        net_axis = np.empty(self.N, dtype=object)
+        for ch in chars:
+            net_axis[self.df_CharsToMinicols[ch]] = ch
+        return net_axis
 
     def generateSequences(self,
                           min_length=5,

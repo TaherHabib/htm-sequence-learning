@@ -51,3 +51,4 @@ def decompress_pickle(filename=None):
 # _______________________________NOTES_________________________________________
 
 # 1. http://www.linfo.org/bzip2.html for details on bzip2 file compression
+# https://stackoverflow.com/questions/4529815/saving-an-object-data-persistence for details on pickling

@@ -33,6 +33,7 @@ import os
 import argparse
 import logging
 import json
+from pickle_utils import full_pickle
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -51,12 +52,16 @@ logger.addHandler(handler)
 ROOT = os.path.abspath(Path(__file__).parent.parent)
 model_config_path = os.path.join(ROOT, 'configs', 'htm')
 datastream_path = os.path.join(ROOT, 'data', 'reber_strings_dataset')
+results_save_path = os.path.join(ROOT, 'data', 'experiment_results')
+if not os.path.exists(results_save_path):
+    os.makedirs(results_save_path)
+
 
 default_config = 'default_config.json'
 default_dataset = 'graph2_mix_numStrings2000_ergFalse.npy'
 
 parser = argparse.ArgumentParser(description='Train an HTM model on generated Reber Grammar Strings')
-parser.add_argument('-dc', '--default_config', dest='run_default_config', action='store', nargs='?', const=True,
+parser.add_argument('-cd', '--default_config', dest='run_default_config', action='store', nargs='?', const=True,
                     default=True, help='')
 parser.add_argument('-dd', '--default_dataset', dest='run_default_dataset', action='store', nargs='?', const=True,
                     default=True, help='')
@@ -68,6 +73,8 @@ parser.add_argument('-n', '--normalize_permanence', dest='normalize_permanence',
                     const=True, default=False, help='')
 parser.add_argument('-p', '--prune_dendrites', dest='prune_dendrites', action='store', nargs='?',
                     const=True, default=False, help='')
+parser.add_argument('-s', '--save_results', dest='save_results', action='store', nargs='?', const=True, default=False,
+                    help='')
 parser.add_argument('-v', '--verbosity', dest='verbosity_level', action='store', default=1, choices=[0, 1, 2],
                     type=int, help='')
 
@@ -192,8 +199,8 @@ def run_experiment(data=None,
                                   count_total_dendrites,
                                   issue]
     dict_results = {
-        'results': df_res,
-        'final_net': htm_network.net_architecture
+        'df_results': df_res.set_index('reber_string', inplace=True),
+        'final_network': htm_network.net_architecture
     }
 
     return dict_results
@@ -208,10 +215,12 @@ if __name__ == '__main__':
         logger.info('Building HTM network with configurations from: {}'.format(args.config_json))
         with open(os.path.join(model_config_path, args.config_json.replace('.json', '') + '.json'), 'r') as config:
             model_params = json.load(config)
+        model_name = args.config_json.replace('.json', '')
     else:
         logger.info('Building HTM network with default configurations from: {}'.format(default_config))
         with open(os.path.join(model_config_path, default_config), 'r') as config:
             model_params = json.load(config)
+        model_name = default_config.replace('.json', '')
 
     # Setting up Reber strings dataset
     if args.dataset_npy is not None:
@@ -219,11 +228,13 @@ if __name__ == '__main__':
         with open(os.path.join(datastream_path, args.dataset_npy.replace('.npy', '') + '.npy'), 'rb') as datafile:
             rg_inputoutput = np.load(datafile, allow_pickle=True)
         graph_idx = get_graph_from_dataset(args.dataset_npy)
+        dataset_name = args.dataset_npy.replace('.npy', '')
     else:
         logger.info('Using default dataset: {}'.format(default_dataset))
         with open(os.path.join(datastream_path, default_dataset), 'rb') as datafile:
             rg_inputoutput = np.load(datafile, allow_pickle=True)
         graph_idx = get_graph_from_dataset(default_dataset)
+        dataset_name = default_dataset.replace('.npy', '')
 
     logger.info('Defining Grammar object for later downstream processing tasks')
     grammar = Reber_Grammar(columns_per_char=model_params['columns_per_char'], graph_idx=graph_idx)
@@ -235,14 +246,26 @@ if __name__ == '__main__':
     htm_network = HTM_NET.from_json(model_params=model_params, verbosity=args.verbosity_level)
 
     logger.info('Running the model...')
-    results = run_experiment(data=rg_inputoutput,
-                             htm_network=htm_network,
-                             A_winner_cells=A_winner_cells,
-                             z_onehot=z_onehot,
-                             normalize_permanence=args.normalize_permanence,
-                             prune_dendrites=args.prune_dendrites,
-                             verbosity=args.verbosity_level)
-
+    dict_results = run_experiment(data=rg_inputoutput,
+                                  htm_network=htm_network,
+                                  A_winner_cells=A_winner_cells,
+                                  z_onehot=z_onehot,
+                                  normalize_permanence=args.normalize_permanence,
+                                  prune_dendrites=args.prune_dendrites,
+                                  verbosity=args.verbosity_level)
+    # Saving to disk
+    if args.save_results:
+        logger.info('Saving results to disk...')
+        results_file_name = 'model{}_dataset{}_normalize{}_prune{}'.format(model_name,
+                                                                           dataset_name,
+                                                                           args.normalize_permanence,
+                                                                           args.prune_dendrites)
+        dict_results['df_results'].to_hdf(path_or_buf=os.path.join(results_save_path, results_file_name + '.hdf5'),
+                                          mode='w', key=results_save_path, complevel=7)
+        full_pickle(filename=os.path.join(results_save_path, results_file_name+'_network'),
+                    data=dict_results['final_network'])
+        full_pickle(filename=os.path.join(results_save_path, results_file_name + '_grammar'),
+                    data=grammar)
 
 class color:
     PURPLE = '\033[95m'
