@@ -28,10 +28,10 @@ logger.addHandler(handler)
 ROOT = os.path.abspath(Path(__file__).parent.parent)
 data_save_path = os.path.join(ROOT, 'data', 'reber_strings_dataset')
 if not os.path.exists(data_save_path):
-    os.mkdir(data_save_path)
+    os.makedirs(data_save_path)
 
 parser = argparse.ArgumentParser(description='Generator for Reber Grammar Strings')
-parser.add_argument('graph_idx', action='store', nargs='?', default=1, type=int, help='')
+parser.add_argument('graph_idx', action='store', nargs='?', default=2, type=int, help='')
 parser.add_argument('reber_strings', action='store', type=str, help='')
 parser.add_argument('num_strings', action='store', type=int, help='')
 parser.add_argument('save_to_disk', action='store', nargs='?', default=True, help='')
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     if args.save_to_disk:
         logger.info('Saving to disk...')
         if args.reber_strings == 'mix':
-            file_name = 'graph{}_numStrings{}_erg{}'.format(args.graph_idx, args.num_strings, args.do_erg)
+            file_name = 'graph{}_{}_numStrings{}_erg{}'.format(args.graph_idx, args.reber_strings, args.num_strings, args.do_erg)
             np.save(arr=rg_inputoutput, file=os.path.join(data_save_path, file_name + '.npy'))
         else:
             file_name = 'graph{}_{}_numStrings{}_erg{}'.format(args.graph_idx, args.reber_strings.replace('.json', ''),

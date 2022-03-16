@@ -53,7 +53,7 @@ model_config_path = os.path.join(ROOT, 'configs', 'htm')
 datastream_path = os.path.join(ROOT, 'data', 'reber_strings_dataset')
 
 default_config = 'default_config.json'
-default_dataset = 'graph1_numStrings2000_ergFalse.npy'
+default_dataset = 'graph2_mix_numStrings2000_ergFalse.npy'
 
 parser = argparse.ArgumentParser(description='Train an HTM model on generated Reber Grammar Strings')
 parser.add_argument('-dc', '--default_config', dest='run_default_config', action='store', nargs='?', const=True,
@@ -66,6 +66,8 @@ parser.add_argument('-d', '--dataset', dest='dataset_npy', action='store', defau
                     help='')
 parser.add_argument('-n', '--normalize_permanence', dest='normalize_permanence', action='store', nargs='?',
                     const=True, default=False, help='')
+parser.add_argument('-p', '--prune_dendrites', dest='prune_dendrites', action='store', nargs='?',
+                    const=True, default=False, help='')
 parser.add_argument('-v', '--verbosity', dest='verbosity_level', action='store', default=1, choices=[0, 1, 2],
                     type=int, help='')
 
@@ -75,6 +77,7 @@ def run_experiment(data=None,
                    A_winner_cells=None,
                    z_onehot=None,
                    normalize_permanence=False,
+                   prune_dendrites=False,
                    verbosity=1):
     # DataFrame to store results for each string in the inputstream
     df_res = pd.DataFrame(columns=['reber_string', 'htm_states', 'htm_preds', 'htm_pred_dendrites',
@@ -123,7 +126,9 @@ def run_experiment(data=None,
                 continue
 
             else:
-                htm_network.update_net_dendrite_dutycycle()
+                if prune_dendrites:
+                    htm_network.update_net_dendrite_dutycycle()
+
                 if normalize_permanence:
                     htm_network.normalize_net_permanence()
 
@@ -160,7 +165,9 @@ def run_experiment(data=None,
                 # reinforcing their pre-synapses with the cells responsible for 'Z'. In other words, the output of
                 # 'dot_prod(net_state,cell_connSynapses)' in 'get_onestep_prediction()' will be all zero, at this step!
 
-                htm_network.update_net_dendrite_dutycycle()
+                if prune_dendrites:
+                    htm_network.update_net_dendrite_dutycycle()
+
                 if normalize_permanence:
                     htm_network.normalize_net_permanence()
 
@@ -184,7 +191,6 @@ def run_experiment(data=None,
                                   np.array(htm_winner_cells),  # numpy array of shape: (<len(in_string)>,M,N)
                                   count_total_dendrites,
                                   issue]
-
     dict_results = {
         'results': df_res,
         'final_net': htm_network.net_architecture
@@ -229,12 +235,13 @@ if __name__ == '__main__':
     htm_network = HTM_NET.from_json(model_params=model_params, verbosity=args.verbosity_level)
 
     logger.info('Running the model...')
-    run_experiment(data=rg_inputoutput,
-                   htm_network=htm_network,
-                   A_winner_cells=A_winner_cells,
-                   z_onehot=z_onehot,
-                   normalize_permanence=args.normalize_permanence,
-                   verbosity=args.verbosity_level)
+    results = run_experiment(data=rg_inputoutput,
+                             htm_network=htm_network,
+                             A_winner_cells=A_winner_cells,
+                             z_onehot=z_onehot,
+                             normalize_permanence=args.normalize_permanence,
+                             prune_dendrites=args.prune_dendrites,
+                             verbosity=args.verbosity_level)
 
 
 class color:
