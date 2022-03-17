@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/htm-sequence-learning.iml" filepath="$PROJECT_DIR$/.idea/htm-sequence-learning.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/htm_sequence_learning.iml" filepath="$PROJECT_DIR$/.idea/htm_sequence_learning.iml" />
     </modules>
   </component>
 </project>

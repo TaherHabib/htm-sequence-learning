@@ -10,8 +10,8 @@ the network is composed of HTM cells – interface imported from htm_cell.py.
 import numpy as np
 import random
 
-from htm_cell import HTM_CELL
-from htm_sequence_learning.htm.utils import dot_prod, get_idx_nonZeroElements
+from htm_sequence_learning.htm.htm_cell import HTM_CELL
+from htm_sequence_learning.htm.utils import dot_prod, get_idx_nonZeroElements, color
 from htm_sequence_learning.reber_grammar.graph_configs import chars
 from .utils import get_num_columns
 
@@ -544,7 +544,7 @@ class HTM_NET:
                                 # Undoing the Previous Reinforcement of Dendrites and de-selecting it from 'winner_cells'
                                 self.net_architecture[bestMatch_CellDendrite[0], j].undo_cell_dendriteReinforcement(
                                     dendrite_idx=bestMatch_CellDendrite[1],
-                                    reinforcedSynapses=reinforcedSynapses)
+                                    reinforced_synapses=reinforcedSynapses)
                                 winner_cells.remove((bestMatch_CellDendrite[0], j))
                                 winner_cells.append((cellIdx_leastUsedCell, j))
                         else:
@@ -562,7 +562,7 @@ class HTM_NET:
                             # Undoing the Previous Reinforcement of Dendrites and de-selecting it from 'winner_cells'
                             self.net_architecture[bestMatch_CellDendrite[0], j].undo_cell_dendriteReinforcement(
                                 dendrite_idx=bestMatch_CellDendrite[1],
-                                reinforcedSynapses=reinforcedSynapses)
+                                reinforced_synapses=reinforcedSynapses)
                             winner_cells.remove((bestMatch_CellDendrite[0], j))
                             winner_cells.append((cellDendrite_idx[0], j))
 
@@ -707,15 +707,3 @@ class HTM_NET:
         return self.M, self.N
 
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    DARKGREEN = '\033[32m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'

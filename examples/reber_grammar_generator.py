@@ -72,10 +72,17 @@ if __name__ == '__main__':
     if args.save_to_disk:
         logger.info('Saving to disk...')
         if args.reber_strings == 'mix':
-            file_name = 'graph{}_{}_numStrings{}_erg{}'.format(args.graph_idx, args.reber_strings, args.num_strings, args.do_erg)
+            file_name = 'graph{}_{}_numStrings{}_erg{}_sort{}'.format(args.graph_idx,
+                                                                      args.reber_strings,
+                                                                      args.num_strings,
+                                                                      args.do_erg,
+                                                                      args.sort_by_length)
             np.save(arr=rg_inputoutput, file=os.path.join(data_save_path, file_name + '.npy'))
         else:
-            file_name = 'graph{}_{}_numStrings{}_erg{}'.format(args.graph_idx, args.reber_strings.replace('.json', ''),
-                                                               args.num_strings, args.do_erg)
+            file_name = 'graph{}_{}_numStrings{}_erg{}_sort{}'.format(args.graph_idx,
+                                                                      args.reber_strings.replace('.json', ''),
+                                                                      args.num_strings,
+                                                                      args.do_erg,
+                                                                      args.sort_by_length)
             np.save(arr=rg_inputoutput, file=os.path.join(data_save_path, file_name + '.npy'))
         logger.info('Generated Reber Strings inputs-outputs saved successfully!')
