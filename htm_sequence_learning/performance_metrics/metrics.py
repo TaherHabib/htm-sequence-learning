@@ -1,89 +1,119 @@
 import numpy as np
 
 
-def prediction_accuracy_ratio():
-    return prediction_accuracy_ratio, moving_average_par
+def compute_network_performance(results_=None, rg_inputoutput=None, ma_len=100, issue_free=False):
+    performance_metrics = []
+
+    for r in range(len(results_['df_results'])):
+        pred_acc = []
+        pred_perf = []
+        pred_perf_per_string = []
+        MA_pred_acc = []
+        MA_pred_perf = []
+
+        if issue_free:
+            df_results = results_['df_results'][r]
+            df_results = df_results[df_results['issue'] == 'none']
+        else:
+            df_results = results_['df_results'][r]
+
+        rg_inputoutput_strings = np.array([c[0] for c in rg_inputoutput])
+
+        for idx, string in enumerate(df_results.index):
+            string_predictions = df_results.loc[string]['htm_preds']
+            rg_io = rg_inputoutput[np.where(rg_inputoutput_strings == string)[0][0]]
+
+            for step in range(len(string_predictions)):
+                correct_predicted_cols_idx = np.where(rg_io[2][step])[0] # Correct expected predictions for the
+                # particular <[string_idx][step]> time step
+
+                predicted_cols_idx = np.unique(np.where(string_predictions[step])[1]) # Indices of the cols predicted by
+                # the network for particular <[string_idx][step]> time step
+
+                count = 0
+                for col_idx in correct_predicted_cols_idx:
+                    if col_idx in predicted_cols_idx:
+                        count += 1
+                if len(predicted_cols_idx) == 0:
+                    accuracy = 0.0
+                else:
+                    accuracy = (count / len(predicted_cols_idx)) * 100
+
+                performance = (count / len(correct_predicted_cols_idx)) * 100
+
+                pred_acc.append(accuracy)
+                pred_perf.append(performance)
+
+            pred_perf_per_string.append(np.mean(pred_perf[-len(string_predictions):]))
+
+        i = 0
+        while i + ma_len < len(pred_perf):
+            MA_pred_acc.append(np.mean([acc_ for acc_ in pred_acc[i:i + ma_len]]))
+            MA_pred_perf.append(np.mean([perf_ for perf_ in pred_perf[i:i + ma_len]]))
+            i += 1
+
+        metrics = {
+            'prediction_accuracy': pred_acc,
+            'prediction_performance': pred_perf,
+            'prediction_performance_per_string': pred_perf_per_string,
+            'moving_average_accuracy': MA_pred_acc,
+            'moving_average_performance': MA_pred_perf,
+        }
+        performance_metrics.append(metrics)
+
+    return np.array(performance_metrics, dtype=object)
 
 
-def prediction_performance_ratio():
-    return prediction_performance_ratio, prediction_performance_perString, moving_average_ppr
+def compute_network_performance_averages(performance_metrics=None):
 
+    nof_runs = len(performance_metrics)
+    len_inputstream = np.min([len(performance_metrics[r]['moving_average_accuracy']) for r in range(nof_runs)])
+    nof_strings = len(performance_metrics[0]['prediction_performance_per_string'])
 
+    avg_prediction_performance_per_string = []
+    sd_prediction_performance_per_string = []
+    for st_ in range(nof_strings):
+        avg_prediction_performance_per_string.append(
+            np.mean([performance_metrics[r]['prediction_performance_per_string'][st_] for r in range(nof_runs)])
+        )
+        sd_prediction_performance_per_string.append(
+            np.std([performance_metrics[r]['prediction_performance_per_string'][st_] for r in range(nof_runs)])
+        )
 
+    avg_prediction_performance_per_string = np.array(avg_prediction_performance_per_string)
+    sd_prediction_performance_per_string = np.array(sd_prediction_performance_per_string)
 
-for r in range(n_runs):
+    avg_moving_average_ppr = []
+    sd_moving_average_ppr = []
+    avg_moving_average_par = []
+    sd_moving_average_par = []
+    for step in range(len_inputstream):
+        avg_moving_average_ppr.append(
+            np.mean([performance_metrics[r]['moving_average_performance'][step] for r in range(nof_runs)])
+        )
+        sd_moving_average_ppr.append(
+            np.std([performance_metrics[r]['moving_average_performance'][step] for r in range(nof_runs)])
+        )
 
-    results = list_results[r]
-    rg_inputoutput = list_rg_inputoutput[r]
+        avg_moving_average_par.append(
+            np.mean([performance_metrics[r]['moving_average_accuracy'][step] for r in range(nof_runs)])
+        )
+        sd_moving_average_par.append(
+            np.std([performance_metrics[r]['moving_average_accuracy'][step] for r in range(nof_runs)])
+        )
 
-    pred_acc = []
-    pred_perf = []
-    pred_perf_perString = []
-    MA_pred_acc = []
-    MA_pred_perf = []
-    for string_idx in range(nof_strings):
+    avg_moving_average_ppr = np.array(avg_moving_average_ppr)
+    sd_moving_average_ppr = np.array(sd_moving_average_ppr)
+    avg_moving_average_par = np.array(avg_moving_average_par)
+    sd_moving_average_par = np.array(sd_moving_average_par)
 
-        performancePerString = []
-        for step in range(len(results.iloc[string_idx]['htm_preds'])):
+    performance_metrics_average = {
+        'avg_prediction_performance_per_string': avg_prediction_performance_per_string,
+        'sd_prediction_performance_per_string': sd_prediction_performance_per_string,
+        'avg_moving_average_ppr': avg_moving_average_ppr,
+        'sd_moving_average_ppr': sd_moving_average_ppr,
+        'avg_moving_average_par': avg_moving_average_par,
+        'sd_moving_average_par': sd_moving_average_par
+    }
 
-            correct_preds_cols_idx = np.where(rg_inputoutput[string_idx][2][step])[0]
-            # Correct expected predictions for the particular <[string_idx][step]> timestep
-
-            predicted_cols_idx = np.unique(np.where(results.iloc[string_idx]['htm_preds'][step])[1])
-            # Indices of the cols predicted by the network for particular <[string_idx][step]> timestep.
-
-            count = 0
-            for col_idx in correct_preds_cols_idx:
-                if col_idx in predicted_cols_idx:
-                    count += 1
-
-            if len(predicted_cols_idx) == 0:
-                accuracy = 0.0
-            else:
-                accuracy = (count / len(predicted_cols_idx)) * 100
-
-            performance = (count / len(correct_preds_cols_idx)) * 100
-
-            pred_acc.append((accuracy, (string_idx, step)))
-            pred_perf.append((performance, (string_idx, step)))
-            performancePerString.append(performance)
-
-        pred_perf_perString.append(np.mean(performancePerString))
-
-    i = 0
-    while i + 100 < len(pred_perf):
-        MA_pred_acc.append(np.mean([acc_[0] for acc_ in pred_acc[i:i + 100]]))
-        MA_pred_perf.append(np.mean([perf_[0] for perf_ in pred_perf[i:i + 100]]))
-        i += 1
-
-    list_pred_acc.append(pred_acc)
-    list_pred_perf.append(pred_perf)
-    list_pred_perf_perString.append(pred_perf_perString)
-    list_MA_pred_acc.append(MA_pred_acc)
-    list_MA_pred_perf.append(MA_pred_perf)
-
-#______________________________________________________________________________________--
-avg_p3s = []
-sd_p3s = []
-for st_ in range(nof_strings):
-    avg_p3s.append(np.mean([list_pred_perf_perString[r][st_] for r in range(n_runs)]))
-    sd_p3s.append(np.std([list_pred_perf_perString[r][st_] for r in range(n_runs)]))
-
-avg_p3s = np.array(avg_p3s)
-sd_p3s = np.array(sd_p3s)
-
-avg_MAppr = []
-sd_MAppr = []
-avg_MApar = []
-sd_MApar = []
-for step in range(shortest_inputstream):
-    avg_MAppr.append(np.mean([list_MA_pred_perf[r][step] for r in range(n_runs)]))
-    sd_MAppr.append(np.std([list_MA_pred_perf[r][step] for r in range(n_runs)]))
-
-    avg_MApar.append(np.mean([list_MA_pred_acc[r][step] for r in range(n_runs)]))
-    sd_MApar.append(np.std([list_MA_pred_acc[r][step] for r in range(n_runs)]))
-
-avg_MAppr = np.array(avg_MAppr)
-sd_MAppr = np.array(sd_MAppr)
-avg_MApar = np.array(avg_MApar)
-sd_MApar = np.array(sd_MApar)
+    return performance_metrics_average

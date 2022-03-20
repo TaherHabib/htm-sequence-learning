@@ -43,7 +43,7 @@ from htm_sequence_learning.htm.utils import A_winner_cells
 from htm_sequence_learning.reber_grammar.ReberGrammar import Reber_Grammar
 from htm_sequence_learning.htm.htm_net import HTM_NET
 from htm_sequence_learning.htm.experimentor import run_experiment
-from htm_sequence_learning.performance_metrics.metrics import prediction_performance_ratio, prediction_accuracy_ratio
+from htm_sequence_learning.performance_metrics.metrics import compute_network_performance
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -130,44 +130,32 @@ if __name__ == '__main__':
                          'final results of all the multiple runs of the experiment if the input stream is constant!')
 
     logger.info('Running the model...')
+    list_total_len_inputstream = []
+    list_string_step_lookups = []
     list_df_results = []
     list_final_network = []
-    list_pred_accuracy = []
-    list_pred_performance = []
-    list_pred_performance_perString = []
-    list_moving_average_par = []
-    list_moving_average_ppr = []
     for run in range(args.nof_runs):
         print('\n')
         logger.info('For Trial: {}'.format(args.nof_runs))
         random.shuffle(rg_inputoutput)
-        df_results, final_network = run_experiment(data=rg_inputoutput,
-                                                   htm_network=htm_network,
-                                                   A_winner_cells=A_winner_cells,
-                                                   z_onehot=z_onehot,
-                                                   normalize_permanence=args.normalize_permanence,
-                                                   prune_dendrites=args.prune_dendrites,
-                                                   verbosity=args.verbosity_level)
-        pred_accuracy_ratio, moving_average_par = prediction_accuracy_ratio()
-        pred_performance_ratio, pred_performance_perString, moving_average_ppr = prediction_performance_ratio()
-
+        total_len_inputstream, string_step_lookup, df_results, final_network = run_experiment(data=rg_inputoutput,
+                                                                                              htm_network=htm_network,
+                                                                                              A_winner_cells=A_winner_cells,
+                                                                                              z_onehot=z_onehot,
+                                                                                              normalize_permanence=args.normalize_permanence,
+                                                                                              prune_dendrites=args.prune_dendrites,
+                                                                                              verbosity=args.verbosity_level)
+        list_total_len_inputstream.append(total_len_inputstream)
+        list_string_step_lookups.append(string_step_lookup)
         list_df_results.append(df_results)
         list_final_network.append(final_network)
-        list_pred_accuracy.append(pred_accuracy_ratio)
-        list_pred_performance.append(pred_performance_ratio)
-        list_pred_performance_perString.append(pred_performance_perString)
-        list_moving_average_par.append(moving_average_par)
-        list_moving_average_ppr.append(moving_average_ppr)
 
     experiment_results = {
+        'total_len_inputstreams': np.array(list_total_len_inputstream),
+        'string_step_lookups': np.array(list_string_step_lookups),
         'df_results': np.array(list_df_results, dtype=object),
         'final_networks': np.array(list_final_network, dtype=object),
         'grammar': grammar,
-        'scores_par': np.array(list_pred_accuracy),
-        'scores_ppr': np.array(list_pred_performance),
-        'scores_p3s': np.array(list_pred_performance_perString),
-        'scores_par_ma': np.array(list_moving_average_par),
-        'scores_ppr_ma': np.array(list_moving_average_ppr)
     }
     # Saving to disk
     if args.save_results:
@@ -177,17 +165,6 @@ if __name__ == '__main__':
                                                                            args.normalize_permanence,
                                                                            args.prune_dendrites)
         np.savez_compressed(file=os.path.join(results_save_path, results_file_name + '.npz'), **experiment_results)
-
-    # Calculating Scores and plotting results
-    logger.info('Calculating model performance metrics...')
-
-
-
-
-
-
-
-
 
         # dict_results['df_results'].to_hdf(path_or_buf=os.path.join(results_save_path, results_file_name + '.hdf5'),
         #                                   mode='w', key=results_file_name, complevel=7)

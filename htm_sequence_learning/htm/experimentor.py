@@ -10,6 +10,10 @@ def run_experiment(data=None,
                    normalize_permanence=False,
                    prune_dendrites=False,
                    verbosity=1):
+
+    string_step_lookup = []
+    total_len_inputstream = 0
+
     # DataFrame to store results for each string in the inputstream
     df_res = pd.DataFrame(columns=['reber_string', 'htm_states', 'htm_preds', 'htm_pred_dendrites',
                                    'htm_winner_cells', 'num_net_dendrites', 'issue'])
@@ -29,7 +33,7 @@ def run_experiment(data=None,
         htm_preds = []
         htm_pred_dendrites = []
         htm_winner_cells = []
-        issue = 'nan'
+        issue = 'none'
 
         in_string = data[string_idx][1]
         in_string_alpha = data[string_idx][0]
@@ -40,6 +44,8 @@ def run_experiment(data=None,
 
         # 'len(in_string) is actually one less than the actual length of the string, due to the final omission of 'Z'.
         for step in range(len(in_string)):
+            string_step_lookup.append((in_string_alpha, step))
+            total_len_inputstream += 1
             if verbosity > 1:
                 print(color.BLUE, color.BOLD, 'Running for step: ', step, ' for: ', in_string_alpha[step],
                       color.END, color.END)
@@ -125,4 +131,4 @@ def run_experiment(data=None,
 
     df_res.set_index('reber_string', inplace=True)
 
-    return df_res, htm_network.net_architecture
+    return total_len_inputstream, np.array(string_step_lookup), df_res, htm_network.net_architecture
