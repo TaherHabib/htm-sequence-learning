@@ -34,7 +34,6 @@ import argparse
 import logging
 import json
 import random
-from pickle_utils import full_pickle
 import numpy as np
 from pathlib import Path
 
@@ -43,7 +42,6 @@ from htm_sequence_learning.htm.utils import A_winner_cells
 from htm_sequence_learning.reber_grammar.ReberGrammar import Reber_Grammar
 from htm_sequence_learning.htm.htm_net import HTM_NET
 from htm_sequence_learning.htm.experimentor import run_experiment
-from htm_sequence_learning.performance_metrics.metrics import compute_network_performance
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
