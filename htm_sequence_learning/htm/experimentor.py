@@ -129,6 +129,13 @@ def run_experiment(data=None,
                                   count_total_dendrites,
                                   issue]
 
-    df_res.set_index('reber_string', inplace=True)
+    # df_res.set_index('reber_string', inplace=True)
 
-    return total_len_inputstream, np.array(string_step_lookup), df_res, htm_network.net_architecture
+    results_ = {
+        'total_len_inputstream': total_len_inputstream,
+        'string_step_lookup': np.array(string_step_lookup),
+        'df_results': df_res,
+        'final_network': htm_network
+    }
+
+    return results_

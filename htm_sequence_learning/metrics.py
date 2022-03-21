@@ -1,9 +1,22 @@
+from pathlib import Path
+import os
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+
+ROOT = os.path.abspath(Path(__file__).parent.parent)
+fig_path = os.path.join(ROOT, 'figures')
 
 
-def compute_network_performance(results_=None, rg_inputoutput=None, issue_free=False, make_plots=False):
+def compute_network_performance(results_=None,
+                                rg_inputoutput=None,
+                                issue_free=False,
+                                compute_averages=True,
+                                make_plots=True,
+                                save_figures=True,
+                                fig_filename=None):
     performance_metrics = []
+    performance_metrics_average = None
     nof_runs = len(results_['df_results'])
 
     for r in range(nof_runs):
@@ -12,15 +25,19 @@ def compute_network_performance(results_=None, rg_inputoutput=None, issue_free=F
         pred_perf_per_string = []
 
         if issue_free:
-            df_results = results_['df_results'][r]
+            df_results = pd.DataFrame(results_['df_results'][r],
+                                      columns=['reber_string', 'htm_states', 'htm_preds', 'htm_pred_dendrites',
+                                               'htm_winner_cells', 'num_net_dendrites', 'issue'])
             df_results = df_results[df_results['issue'] == 'none']
         else:
-            df_results = results_['df_results'][r]
+            df_results = pd.DataFrame(results_['df_results'][r],
+                                      columns=['reber_string', 'htm_states', 'htm_preds', 'htm_pred_dendrites',
+                                               'htm_winner_cells', 'num_net_dendrites', 'issue'])
 
         rg_inputoutput_strings = np.array([c[0] for c in rg_inputoutput])
 
-        for idx, string in enumerate(df_results.index):
-            string_predictions = df_results.loc[string]['htm_preds']
+        for idx, string in enumerate(df_results['reber_string']):
+            string_predictions = df_results.loc[idx]['htm_preds']
             rg_io = rg_inputoutput[np.where(rg_inputoutput_strings == string)[0][0]]
 
             for step in range(len(string_predictions)):
@@ -88,18 +105,35 @@ def compute_network_performance(results_=None, rg_inputoutput=None, issue_free=F
             plt.xticks(fontsize=25)
             plt.grid(True, linestyle="--", color='black', alpha=0.4)
 
+            if save_figures:
+                file_name = 'PAR_PPR_P3S_{}.svg'.format(fig_filename.replace('.npy', ''))
+                plt.savefig(fname=os.path.join(fig_path, file_name), format='svg')
+                # logger.info('Figure saved in svg format at {}.svg.'.format(os.path.join(fig_path, fig_name)))
+
             plt.show()
             plt.close()
 
-    return np.array(performance_metrics, dtype=object)
+    performance_metrics = np.array(performance_metrics, dtype=object)
+
+    if compute_averages:
+        performance_metrics_average = compute_network_performance_averages(performance_metrics=performance_metrics,
+                                                                           make_plots=make_plots,
+                                                                           save_figures=save_figures,
+                                                                           fig_filename=fig_filename)
+
+    return performance_metrics, performance_metrics_average
 
 
-def compute_network_performance_averages(performance_metrics=None, ma_len=100, make_plots=False):
+def compute_network_performance_averages(performance_metrics=None,
+                                         ma_len=100,
+                                         make_plots=True,
+                                         save_figures=True,
+                                         fig_filename=None):
 
     nof_runs = len(performance_metrics)
     nof_strings = len(performance_metrics[0]['prediction_performance_per_string'])
 
-    # __________________Computing Mean and SD of P3S score_______________________________________
+    # ______________________Computing Mean and SD of P3S score___________________________________
     avg_prediction_performance_per_string = []
     sd_prediction_performance_per_string = []
     for st_ in range(nof_strings):
@@ -172,7 +206,7 @@ def compute_network_performance_averages(performance_metrics=None, ma_len=100, m
 
     if make_plots:
         # PLOTTING THE AVERAGE P3S SCORE
-        plt.figure(5, figsize=(28, 8 * 2))
+        plt.figure(1, figsize=(28, 8 * 2))
         plt.subplot(2, 1, 1)
         plt.plot(avg_prediction_performance_per_string, label='P3S', color='darkgreen', lw=2)
         plt.fill_between([i for i in range(nof_strings)],
@@ -203,6 +237,10 @@ def compute_network_performance_averages(performance_metrics=None, ma_len=100, m
         plt.xticks(fontsize=25)
         plt.legend(loc='lower center', facecolor='lightgrey', fontsize=25)
         plt.grid(True, linestyle="--", color='black', alpha=0.6)
+
+        if save_figures:
+            file_name = 'AvgP3S_MAPAR_MAPPR_{}.svg'.format(fig_filename.replace('.npy', ''))
+            plt.savefig(fname=os.path.join(fig_path, file_name), format='svg')
 
         plt.show()
         plt.close()

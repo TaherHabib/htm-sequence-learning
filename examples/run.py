@@ -62,23 +62,32 @@ default_config = 'default_config.json'
 default_dataset = 'graph2_mix_numStrings2000_ergFalse_sortFalse.npy'
 
 parser = argparse.ArgumentParser(description='Train an HTM model on generated Reber Grammar Strings')
-parser.add_argument('-cd', '--default_config', dest='run_default_config', action='store', nargs='?', const=True,
-                    default=True, help='')
-parser.add_argument('-dd', '--default_dataset', dest='run_default_dataset', action='store', nargs='?', const=True,
-                    default=True, help='')
+parser.add_argument('-q', '--default_config', dest='run_default_config', action='store', nargs='?', const=True,
+                    default=True, help='Whether to use the default configuration of the HTM model. Specifying only the '
+                                       'short flag without any argument leads to a value of True.')
+parser.add_argument('-t', '--default_dataset', dest='run_default_dataset', action='store', nargs='?', const=True,
+                    default=True, help='Whether to use the default dataset to run on the given HTM model. Specifying '
+                                       'only the short flag without any argument leads to a value of True.')
 parser.add_argument('-c', '--config', dest='config_json', action='store', default=None, type=str,
-                    help='')
+                    help='A .json file containing the configuration for the HTM model. See configs/htm/default_config.json'
+                         'for the format of this file.')
 parser.add_argument('-d', '--dataset', dest='dataset_npy', action='store', default=None, type=str,
-                    help='')
+                    help='A .npy file containing the input stream on which to run the HTM model. See '
+                         'examples/reber_grammar_generator.py for details on how to generate input stream for the HTM model.')
 parser.add_argument('-s', '--save_results', dest='save_results', action='store', nargs='?', const=True, default=False,
-                    help='')
-parser.add_argument('-np', '--normalize_permanence', dest='normalize_permanence', action='store', nargs='?',
-                    const=True, default=False, help='')
-parser.add_argument('-pd', '--prune_dendrites', dest='prune_dendrites', action='store', nargs='?',
-                    const=True, default=False, help='')
+                    help='Whether to save the results of the experiment or not. Specifying only the short flag without '
+                         'any argument leads to a value of True.')
+parser.add_argument('-n', '--normalize_permanence', dest='normalize_permanence', action='store', nargs='?', const=True,
+                    default=False, help='Whether to normalize (in the range [0,1]) the permanence values of the '
+                                        'synaptic connections between neurons. Specifying only the short flag without '
+                                        'any argument leads to a value of True.')
+parser.add_argument('-p', '--prune_dendrites', dest='prune_dendrites', action='store', nargs='?', const=True, default=False,
+                    help='Whether to prune the (unused) dendrites from the network. Specifying only the short flag '
+                         'without any argument leads to a value of True.')
 parser.add_argument('-v', '--verbosity', dest='verbosity_level', action='store', default=1, choices=[0, 1, 2],
-                    type=int, help='')
-parser.add_argument('-n', '--nof_runs', dest='nof_runs', action='store', default=1, type=int, help='')
+                    type=int, help='Verbosity of the output. Choices are: 0, 1, 2')
+parser.add_argument('-r', '--nof_runs', dest='nof_runs', action='store', default=1, type=int,
+                    help='Number of runs of the experiment.')
 
 
 if __name__ == '__main__':
@@ -134,34 +143,38 @@ if __name__ == '__main__':
     list_final_network = []
     for run in range(args.nof_runs):
         print('\n')
-        logger.info('For Trial: {}'.format(args.nof_runs))
+        logger.info('For Trial: {}'.format(run))
         random.shuffle(rg_inputoutput)
-        total_len_inputstream, string_step_lookup, df_results, final_network = run_experiment(data=rg_inputoutput,
-                                                                                              htm_network=htm_network,
-                                                                                              A_winner_cells=A_winner_cells,
-                                                                                              z_onehot=z_onehot,
-                                                                                              normalize_permanence=args.normalize_permanence,
-                                                                                              prune_dendrites=args.prune_dendrites,
-                                                                                              verbosity=args.verbosity_level)
-        list_total_len_inputstream.append(total_len_inputstream)
-        list_string_step_lookups.append(string_step_lookup)
-        list_df_results.append(df_results)
-        list_final_network.append(final_network)
+        results_ = run_experiment(data=rg_inputoutput,
+                                  htm_network=htm_network,
+                                  A_winner_cells=A_winner_cells,
+                                  z_onehot=z_onehot,
+                                  normalize_permanence=args.normalize_permanence,
+                                  prune_dendrites=args.prune_dendrites,
+                                  verbosity=args.verbosity_level)
+
+        list_total_len_inputstream.append(results_['total_len_inputstream'])
+        list_string_step_lookups.append(results_['string_step_lookup'])
+        list_df_results.append(results_['df_results'])
+        list_final_network.append(results_['final_network'])
 
     experiment_results = {
         'total_len_inputstreams': np.array(list_total_len_inputstream),
         'string_step_lookups': np.array(list_string_step_lookups),
-        'df_results': np.array(list_df_results, dtype=object),
+        'df_results': np.array(list_df_results, dtype=object),  # this step converts the dataframes stored in
+        # 'list_df_results' into numpy arrays. Remember to convert these arrays back into dataframes when loading
+        # the saved .npz file back into memory.
         'final_networks': np.array(list_final_network, dtype=object),
-        'grammar': grammar,
+        'grammar': np.array([grammar], dtype=object),
     }
     # Saving to disk
     if args.save_results:
         logger.info('Saving results to disk...')
-        results_file_name = 'MODEL{}_DATASET{}_NORMALIZE{}_PRUNE{}'.format(model_name,
-                                                                           dataset_name,
-                                                                           args.normalize_permanence,
-                                                                           args.prune_dendrites)
+        results_file_name = 'MODEL{}_DATASET{}_NORMALIZE{}_PRUNE{}_RUNS{}'.format(model_name,
+                                                                                  dataset_name,
+                                                                                  args.normalize_permanence,
+                                                                                  args.prune_dendrites,
+                                                                                  args.nof_runs)
         np.savez_compressed(file=os.path.join(results_save_path, results_file_name + '.npz'), **experiment_results)
 
         # dict_results['df_results'].to_hdf(path_or_buf=os.path.join(results_save_path, results_file_name + '.hdf5'),

@@ -31,18 +31,31 @@ if not os.path.exists(data_save_path):
     os.makedirs(data_save_path)
 
 parser = argparse.ArgumentParser(description='Generator for Reber Grammar Strings')
-parser.add_argument('graph_idx', action='store', nargs='?', default=2, type=int, help='')
-parser.add_argument('reber_strings', action='store', type=str, help='')
-parser.add_argument('num_strings', action='store', type=int, help='')
-parser.add_argument('save_to_disk', action='store', nargs='?', default=True, help='')
+parser.add_argument('graph_idx', action='store', nargs='?', default=2, type=int,
+                    help='Index of the transition graph to use to generate Reber strings for the input stream. See '
+                         'htm_sequence_learning/reber_grammar/graph_configs.py on details of different available '
+                         'transition graphs. While this is a position argument, it is still optional to specify it, in'
+                         'which case the standard transition graph (graph_idx = 2) is used as a default.')
+parser.add_argument('reber_strings', action='store', type=str,
+                    help='Specify whether to generate a mix set of Reber Strings (\'mix\') or generate input stream '
+                         'using pre-defined input-output Reber Strings (a .json file). For format of this JSON file, '
+                         'see configs/rebergrammar directory.')
+parser.add_argument('num_strings', action='store', type=int, help='Total number of reber strings to generate.')
+parser.add_argument('save_to_disk', action='store', nargs='?', default=True,
+                    help='Whether to save the generated Reber Strings input stream. The file is saved in '
+                         'data/reber_strings_dataset directory. While this is a position argument, it is still optional'
+                         ' to specify it, in which case default is True.')
 parser.add_argument('-cc', '--columns_per_char', dest='columns_per_char', action='store', default=32, type=int,
-                    help='')
+                    help='Number of (HTM network) columns to use per character (APVSXTZ). Default value is at 32. '
+                         'This, along with \'graph_idx\', is an input to the Reber_Grammar() class object.')
 parser.add_argument('-m', '--max_length', dest='max_string_length', action='store', default=1000, type=int,
-                    help='')
+                    help='Maximum allowable length of a Reber String in the input stream. Default is set at 1000.')
 parser.add_argument('-e', '--do_erg', dest='do_erg', action='store', nargs='?', const=True, default=False,
-                    help='')
+                    help='Whether to generate Embedded Reber Strings or not. Specifying only the short flag without '
+                    'any argument leads to a value of True.')
 parser.add_argument('-s', '--sort', dest='sort_by_length', action='store', nargs='?', const=True, default=False,
-                    help='')
+                    help='Whether to sort the Reber Strings with length or not. Specifying only the short flag without '
+                         'any argument leads to a value of True.')
 
 if __name__ == '__main__':
 
