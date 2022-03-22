@@ -126,9 +126,6 @@ if __name__ == '__main__':
     A_winner_cells = A_winner_cells(rg=grammar, M=model_params['cells_per_column'])  # Get 'A' winner cells
     z_onehot = grammar.CharToOnehot('Z')  # Get Onehot for 'Z'
 
-    logger.info('Initializing HTM Network')
-    htm_network = HTM_NET.from_json(model_params=model_params, verbosity=args.verbosity_level)
-
     # Checking is multiple runs are (wrongly) attempted with sorted inputstream
     data_sorted = 'True' in dataset_name.split('_')[-1]
     if args.nof_runs > 1 and data_sorted:
@@ -144,6 +141,8 @@ if __name__ == '__main__':
     for run in range(args.nof_runs):
         print('\n')
         logger.info('For Trial: {}'.format(run))
+        logger.info('Initializing HTM Network')
+        htm_network = HTM_NET.from_json(model_params=model_params, verbosity=args.verbosity_level)
         random.shuffle(rg_inputoutput)
         results_ = run_experiment(data=rg_inputoutput,
                                   htm_network=htm_network,
@@ -159,8 +158,8 @@ if __name__ == '__main__':
         list_final_network.append(results_['final_network'])
 
     experiment_results = {
-        'total_len_inputstreams': np.array(list_total_len_inputstream),
-        'string_step_lookups': np.array(list_string_step_lookups),
+        'total_len_inputstreams': np.array(list_total_len_inputstream, dtype=object),
+        'string_step_lookups': np.array(list_string_step_lookups, dtype=object),
         'df_results': np.array(list_df_results, dtype=object),  # this step converts the dataframes stored in
         # 'list_df_results' into numpy arrays. Remember to convert these arrays back into dataframes when loading
         # the saved .npz file back into memory.

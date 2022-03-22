@@ -106,3 +106,15 @@ def make_performance_averages_plots(avg_pred_performance_per_string=None,
 
     plt.show()
     plt.close()
+
+
+def make_htm_activations_plot():
+    pass
+
+
+def make_htm_predictions_plot():
+    pass
+
+
+def make_htm_dendrite_connection_plot():
+    pass

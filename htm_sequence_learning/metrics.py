@@ -106,8 +106,8 @@ def compute_network_performance_averages(performance_metrics=None,
         sd_prediction_performance_per_string.append(
             np.std([performance_metrics[r]['prediction_performance_per_string'][st_] for r in range(nof_runs)])
         )
-    avg_prediction_performance_per_string = np.array(avg_prediction_performance_per_string)
-    sd_prediction_performance_per_string = np.array(sd_prediction_performance_per_string)
+    avg_prediction_performance_per_string = np.array(avg_prediction_performance_per_string, dtype=object)
+    sd_prediction_performance_per_string = np.array(sd_prediction_performance_per_string, dtype=object)
 
     # _____________Computing moving averages of PAR and PPR scores per run________________________
     moving_average_par_per_run = []
@@ -128,8 +128,8 @@ def compute_network_performance_averages(performance_metrics=None,
         moving_average_par_per_run.append(MA_pred_acc)
         moving_average_ppr_per_run.append(MA_pred_perf)
 
-    moving_average_par_per_run = np.array(moving_average_par_per_run)
-    moving_average_ppr_per_run = np.array(moving_average_ppr_per_run)
+    moving_average_par_per_run = np.array(moving_average_par_per_run, dtype=object)
+    moving_average_ppr_per_run = np.array(moving_average_ppr_per_run, dtype=object)
 
     # _________Computing mean and SD of the moving averages of PAR and PPR scores per run_____________
     len_inputstream = np.min([len(moving_average_par_per_run[r]) for r in range(nof_runs)])
@@ -153,10 +153,10 @@ def compute_network_performance_averages(performance_metrics=None,
             np.std([moving_average_par_per_run[r][step] for r in range(nof_runs)])
         )
 
-    avg_moving_average_ppr = np.array(avg_moving_average_ppr)
-    sd_moving_average_ppr = np.array(sd_moving_average_ppr)
-    avg_moving_average_par = np.array(avg_moving_average_par)
-    sd_moving_average_par = np.array(sd_moving_average_par)
+    avg_moving_average_ppr = np.array(avg_moving_average_ppr, dtype=object)
+    sd_moving_average_ppr = np.array(sd_moving_average_ppr, dtype=object)
+    avg_moving_average_par = np.array(avg_moving_average_par, dtype=object)
+    sd_moving_average_par = np.array(sd_moving_average_par, dtype=object)
 
     performance_metrics_average = {
         'avg_prediction_performance_per_string': avg_prediction_performance_per_string,
