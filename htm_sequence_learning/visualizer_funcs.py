@@ -12,8 +12,7 @@ def make_performance_plots(run_idx=None,
                            pred_performance=None,
                            pred_performance_per_string=None,
                            save_figures=True,
-                           fig_filename=None,
-                           fig_fileformat='svg'):
+                           fig_filename=None):
 
     # ____________________________PPR and PAR PLOTS_________________________________________
     plt.figure(run_idx, figsize=(25, 7 * 3))
@@ -50,7 +49,7 @@ def make_performance_plots(run_idx=None,
 
     if save_figures:
         file_name = 'PAR_PPR_P3S_{}_RUNIDX{}'.format(fig_filename.replace('.npz', ''), run_idx)
-        plt.savefig(fname=os.path.join(fig_path, file_name), format=fig_fileformat)
+        plt.savefig(fname=os.path.join(fig_path, file_name), format='svg')
         # logger.info('Figure saved in svg format at {}.svg.'.format(os.path.join(fig_path, fig_name)))
 
     plt.show()
@@ -66,8 +65,7 @@ def make_performance_averages_plots(avg_pred_performance_per_string=None,
                                     nof_strings=None,
                                     len_inputstream=None,
                                     save_figures=True,
-                                    fig_filename=None,
-                                    fig_fileformat='svg'):
+                                    fig_filename=None):
 
     # PLOTTING THE AVERAGE P3S SCORE
     plt.figure(1, figsize=(28, 8 * 2))
@@ -104,7 +102,7 @@ def make_performance_averages_plots(avg_pred_performance_per_string=None,
 
     if save_figures:
         file_name = 'AvgP3S_MAPAR_MAPPR_{}'.format(fig_filename.replace('.npz', ''))
-        plt.savefig(fname=os.path.join(fig_path, file_name), format=fig_fileformat)
+        plt.savefig(fname=os.path.join(fig_path, file_name), format='svg')
 
     plt.show()
     plt.close()
