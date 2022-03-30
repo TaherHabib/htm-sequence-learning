@@ -140,7 +140,7 @@ if __name__ == '__main__':
     list_final_network = []
     for run in range(args.nof_runs):
         print('\n')
-        logger.info('For Trial: {}'.format(run))
+        logger.info('For Trial: {}'.format(run+1))
         logger.info('Initializing HTM Network')
         htm_network = HTM_NET.from_json(model_params=model_params, verbosity=args.verbosity_level)
         random.shuffle(rg_inputoutput)
@@ -158,7 +158,7 @@ if __name__ == '__main__':
         list_final_network.append(results_['final_network'])
 
     experiment_results = {
-        'total_len_inputstreams': np.array(list_total_len_inputstream, dtype=object),
+        'total_len_inputstreams': np.array(list_total_len_inputstream),
         'string_step_lookups': np.array(list_string_step_lookups, dtype=object),
         'df_results': np.array(list_df_results, dtype=object),  # this step converts the dataframes stored in
         # 'list_df_results' into numpy arrays. Remember to convert these arrays back into dataframes when loading

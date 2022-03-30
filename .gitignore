@@ -14,7 +14,7 @@ ipython_config.py
 .python-version
 
 # Pycharm configs
-#.idea
+.idea
 
 # ignoring Run/Debug Configs
 .run
